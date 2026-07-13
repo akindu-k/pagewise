@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MD to PDF &mdash; Markdown to PDF Converter</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <div class="logo">
+        <span class="logo-mark">MD</span>
+        <span class="logo-arrow">&rarr;</span>
+        <span class="logo-mark pdf">PDF</span>
+      </div>
+      <p class="tagline">Convert Markdown files to polished PDF documents, right in your browser.</p>
+    </header>
+
+    <main class="card">
+      <div class="tabs">
+        <button class="tab active" data-tab="upload" type="button">Upload File</button>
+        <button class="tab" data-tab="paste" type="button">Paste Markdown</button>
+      </div>
+
+      <section class="tab-panel" id="panel-upload">
+        <label id="dropzone" class="dropzone" for="file-input">
+          <input type="file" id="file-input" accept=".md,.markdown,text/markdown,text/plain" hidden>
+          <div class="dropzone-content">
+            <svg class="dropzone-icon" viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M12 16V4m0 0-4 4m4-4 4 4" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <p><strong>Drop your .md file here</strong> or click to browse</p>
+            <p class="hint">Markdown files up to 10MB</p>
+          </div>
+        </label>
+        <div id="file-selected" class="file-selected" hidden>
+          <span id="file-name"></span>
+          <button id="file-clear" type="button" class="link-btn">Remove</button>
+        </div>
+      </section>
+
+      <section class="tab-panel hidden" id="panel-paste">
+        <textarea id="markdown-input" placeholder="# Paste your Markdown here&#10;&#10;- Item one&#10;- Item two"></textarea>
+      </section>
+
+      <div class="actions">
+        <button id="convert-btn" class="convert-btn" type="button" disabled>Convert to PDF</button>
+        <span id="status" class="status" aria-live="polite"></span>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <p>Runs locally &mdash; Markdown is rendered with GitHub-flavored styling and converted via headless Chromium.</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
