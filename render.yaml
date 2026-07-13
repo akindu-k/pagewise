@@ -1,0 +1,9 @@
+# Render Blueprint — deploy with: Render Dashboard → New → Blueprint → this repo
+services:
+  - type: web
+    name: md-to-pdf
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /
+    autoDeploy: true

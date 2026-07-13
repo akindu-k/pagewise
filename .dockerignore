@@ -1,0 +1,7 @@
+node_modules
+.jac
+.git
+*.log
+*.pdf
+.env
+.env.local

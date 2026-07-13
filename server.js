@@ -76,7 +76,9 @@ function launchBrowser() {
   browserPromise = puppeteer
     .launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      // --disable-dev-shm-usage: containers (Render/Docker) give a tiny /dev/shm
+      // which crashes Chromium on larger renders; force it to use /tmp instead.
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
     })
     .catch((err) => {
       // Don't cache a failed launch, otherwise every later request keeps
