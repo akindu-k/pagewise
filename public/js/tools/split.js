@@ -1,4 +1,4 @@
-import { closePdf, createSingleFilePicker, isPdfFile, openPdf, renderPdfPage, runConversion, setStatus } from '../common.js';
+import { bindTabs, closePdf, createSingleFilePicker, isPdfFile, openPdf, renderPdfPage, runConversion, setStatus } from '../common.js';
 import { planSplit } from '/shared/page-ranges.mjs';
 
 // Compresses sorted page numbers into "1-3, 5, 7-8".
@@ -14,7 +14,6 @@ function toRangeText(pages) {
 
 export function initSplit(root) {
   const body = root.querySelector('.split-body');
-  const modeTabs = root.querySelectorAll('.split-modes .tab');
   const optionPanels = root.querySelectorAll('.split-option');
   const rangesInput = root.querySelector('#split-ranges');
   const rangesMerge = root.querySelector('#split-ranges-merge');
@@ -50,8 +49,8 @@ export function initSplit(root) {
       plan = planSplit(options(), pageCount);
       const n = plan.length;
       summaryEl.textContent = n === 1
-        ? `Creates 1 PDF with ${plan[0].pages.length} page${plan[0].pages.length === 1 ? '' : 's'}.`
-        : `Creates ${n} PDFs, downloaded as a .zip.`;
+        ? `You'll get 1 PDF with ${plan[0].pages.length} page${plan[0].pages.length === 1 ? '' : 's'}.`
+        : `You'll get ${n} PDFs in a .zip file.`;
       summaryEl.classList.remove('error');
     } catch (err) {
       summaryEl.textContent = err.message;
@@ -69,6 +68,17 @@ export function initSplit(root) {
       const included = group !== undefined;
       li.classList.toggle('excluded', !included);
       li.classList.toggle('selectable', mode === 'extract');
+      // In extract mode each page acts as a checkbox for keyboard and
+      // screen-reader users too.
+      if (mode === 'extract') {
+        li.setAttribute('role', 'checkbox');
+        li.setAttribute('aria-checked', String(included));
+        li.tabIndex = 0;
+      } else {
+        li.removeAttribute('role');
+        li.removeAttribute('aria-checked');
+        li.removeAttribute('tabindex');
+      }
       li.style.setProperty('--group-hue', included ? (group * 47 + 230) % 360 : 0);
       li.querySelector('.page-group').textContent = included && plan.length > 1 ? `File ${group + 1}` : '';
     });
@@ -76,7 +86,6 @@ export function initSplit(root) {
 
   function setMode(next) {
     mode = next;
-    modeTabs.forEach((tab) => tab.classList.toggle('active', tab.dataset.mode === mode));
     optionPanels.forEach((panel) => { panel.hidden = panel.dataset.for !== mode; });
     update();
   }
@@ -129,7 +138,14 @@ export function initSplit(root) {
       li.dataset.page = i + 1;
       li.innerHTML = '<div class="page-preview"></div><span class="page-number"></span><span class="page-group"></span>';
       li.querySelector('.page-number').textContent = i + 1;
+      li.setAttribute('aria-label', `Page ${i + 1}`);
       li.addEventListener('click', () => togglePage(i + 1));
+      li.addEventListener('keydown', (e) => {
+        if (e.key === ' ' || e.key === 'Enter') {
+          e.preventDefault();
+          togglePage(i + 1);
+        }
+      });
       observer.observe(li);
       return li;
     }));
@@ -178,7 +194,7 @@ export function initSplit(root) {
     onChange: load,
   });
 
-  modeTabs.forEach((tab) => tab.addEventListener('click', () => setMode(tab.dataset.mode)));
+  bindTabs(root.querySelector('[role=tablist]'), (tab) => setMode(tab.dataset.mode));
   [rangesInput, everyInput, pagesInput].forEach((el) => el.addEventListener('input', update));
   [rangesMerge, extractMerge].forEach((el) => el.addEventListener('change', update));
   allCheckbox.addEventListener('change', () => {
@@ -191,7 +207,7 @@ export function initSplit(root) {
       button: convertBtn,
       statusEl,
       fallbackName: 'split.zip',
-      done: (response, { filename }) => `Done! ${filename} downloaded.`,
+      done: (response, { filename }) => `Done. ${filename} has downloaded.`,
       request() {
         const formData = new FormData();
         formData.append('file', picker.file);

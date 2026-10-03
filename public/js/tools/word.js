@@ -19,7 +19,7 @@ export function initWord(root) {
       button: convertBtn,
       statusEl,
       fallbackName: 'document.docx',
-      done: (response, { filename }) => `Done! ${filename} downloaded.`,
+      done: (response, { filename }) => `Done. ${filename} has downloaded.`,
       request() {
         const formData = new FormData();
         formData.append('file', picker.file);

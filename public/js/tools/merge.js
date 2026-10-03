@@ -21,10 +21,10 @@ export function initMerge(root) {
     onChange(entries) {
       const blocked = entries.filter((e) => e.locked || e.invalid);
       const total = entries.reduce((sum, e) => sum + (e.pages || 0), 0);
-      summaryEl.textContent = entries.length > 1 && total ? `${total} pages in total` : '';
+      summaryEl.textContent = entries.length > 1 && total ? `${total} pages total` : '';
       convertBtn.disabled = entries.length < 2 || blocked.length > 0;
       if (blocked.length) {
-        setStatus(statusEl, `Remove ${blocked.map((e) => `"${e.file.name}"`).join(', ')} — ${blocked.length === 1 ? 'it is' : 'they are'} locked or unreadable.`, 'error');
+        setStatus(statusEl, `Remove ${blocked.map((e) => `"${e.file.name}"`).join(', ')} to continue: ${blocked.length === 1 ? "it's" : "they're"} password-protected or unreadable.`, 'error');
         showingHint = true;
       } else if (entries.length === 1) {
         setStatus(statusEl, 'Add at least one more PDF to merge.');
@@ -41,7 +41,7 @@ export function initMerge(root) {
       button: convertBtn,
       statusEl,
       fallbackName: 'merged.pdf',
-      done: 'Done! Merged PDF downloaded.',
+      done: 'Done. Your merged PDF has downloaded.',
       request() {
         const formData = new FormData();
         list.entries.forEach((entry) => formData.append('files', entry.file));

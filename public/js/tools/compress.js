@@ -27,10 +27,10 @@ export function initCompress(root) {
         const before = Number(response.headers.get('X-Original-Size'));
         const after = Number(response.headers.get('X-Compressed-Size'));
         if (!before || after >= before) {
-          return 'This PDF is already well optimized — downloaded unchanged.';
+          return 'This PDF is already well optimized, so you got the original back.';
         }
         const saved = Math.round((1 - after / before) * 100);
-        return `Done! ${formatBytes(before)} → ${formatBytes(after)} (${saved}% smaller).`;
+        return `Done. ${formatBytes(before)} → ${formatBytes(after)}, ${saved}% smaller.`;
       },
       request() {
         const formData = new FormData();

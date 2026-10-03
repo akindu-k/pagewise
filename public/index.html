@@ -3,268 +3,285 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
 <title>PDF Converter</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preload" href="/vendor/fonts/ibm-plex-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/vendor/fonts/ibm-plex-sans-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="page">
-    <header class="header">
-      <div class="logo">
-        <span class="logo-mark" id="logo-source">MD</span>
-        <span class="logo-arrow">&rarr;</span>
-        <span class="logo-mark pdf" id="logo-target">PDF</span>
-      </div>
-      <p class="tagline" id="tagline"></p>
-      <nav class="tools" aria-label="Tools">
-        <a class="tool-link" href="#md-to-pdf" data-tool="md">Markdown to PDF</a>
-        <a class="tool-link" href="#jpg-to-pdf" data-tool="jpg">JPG to PDF</a>
-        <a class="tool-link" href="#merge-pdf" data-tool="merge">Merge PDF</a>
-        <a class="tool-link" href="#split-pdf" data-tool="split">Split PDF</a>
-        <a class="tool-link" href="#compress-pdf" data-tool="compress">Compress PDF</a>
-        <a class="tool-link" href="#pdf-to-word" data-tool="word">PDF to Word</a>
+  <!-- Icon sprite: referenced below with <use href="#i-…">. -->
+  <svg width="0" height="0" class="sprite" aria-hidden="true">
+    <symbol id="i-md" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M9 17v-5l1.5 2 1.5-2v5M15 12v5m-1.5-1.5L15 17l1.5-1.5"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="1"/><circle cx="9" cy="10" r="1.5"/><path d="m20.5 16-4.5-4.5-8 7.5"/></symbol>
+    <symbol id="i-merge" viewBox="0 0 24 24"><path d="M4 4h6v8H4zM14 4h6v8h-6z"/><path d="M7 12v2.5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V12M12 16.5V21m-2-2 2 2 2-2"/></symbol>
+    <symbol id="i-split" viewBox="0 0 24 24"><path d="M6 3h12v7M6 3v7M6 14v7h12v-7"/><path d="M3 12h2m3 0h2m3 0h2m3 0h3" /></symbol>
+    <symbol id="i-compress" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M12 8v4m-2-2 2 2 2-2M12 18v-4m-2 2 2-2 2 2"/></symbol>
+    <symbol id="i-word" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="m8.5 11 1.25 6L12 12.5l2.25 4.5 1.25-6"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4m0 0-4 4m4-4 4 4"/><path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="m14 6-6 6 6 6"/></symbol>
+    <symbol id="i-right" viewBox="0 0 24 24"><path d="m10 6 6 6-6 6"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17"/></symbol>
+  </svg>
+
+  <a class="skip-link" href="#workspace">Skip to tool</a>
+
+  <div class="app">
+    <aside class="sidebar">
+      <a class="brand" href="#md-to-pdf">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>PDF Converter</span>
+      </a>
+
+      <nav class="tool-nav" aria-label="Tools">
+        <p class="nav-group" id="g-create">Create PDF</p>
+        <ul aria-labelledby="g-create">
+          <li><a class="tool-link" href="#md-to-pdf" data-tool="md"><svg class="icon"><use href="#i-md"/></svg><span>Markdown to PDF</span></a></li>
+          <li><a class="tool-link" href="#jpg-to-pdf" data-tool="jpg"><svg class="icon"><use href="#i-image"/></svg><span>JPG to PDF</span></a></li>
+        </ul>
+        <p class="nav-group" id="g-organize">Organize</p>
+        <ul aria-labelledby="g-organize">
+          <li><a class="tool-link" href="#merge-pdf" data-tool="merge"><svg class="icon"><use href="#i-merge"/></svg><span>Merge PDF</span></a></li>
+          <li><a class="tool-link" href="#split-pdf" data-tool="split"><svg class="icon"><use href="#i-split"/></svg><span>Split PDF</span></a></li>
+        </ul>
+        <p class="nav-group" id="g-optimize">Optimize</p>
+        <ul aria-labelledby="g-optimize">
+          <li><a class="tool-link" href="#compress-pdf" data-tool="compress"><svg class="icon"><use href="#i-compress"/></svg><span>Compress PDF</span></a></li>
+        </ul>
+        <p class="nav-group" id="g-from">Convert from PDF</p>
+        <ul aria-labelledby="g-from">
+          <li><a class="tool-link" href="#pdf-to-word" data-tool="word"><svg class="icon"><use href="#i-word"/></svg><span>PDF to Word</span></a></li>
+        </ul>
       </nav>
-    </header>
 
-    <main class="card" data-tool-panel="md">
-      <div class="tabs">
-        <button class="tab active" data-tab="upload" type="button">Upload File</button>
-        <button class="tab" data-tab="paste" type="button">Paste Markdown</button>
-      </div>
+      <p class="sidebar-note">Files are processed on this server and deleted as soon as your download is ready.</p>
+    </aside>
 
-      <section class="tab-panel" id="panel-upload">
-        <label id="dropzone" class="dropzone" for="file-input">
-          <input type="file" id="file-input" accept=".md,.markdown,text/markdown,text/plain" hidden>
-          <div class="dropzone-content">
-            <svg class="dropzone-icon" viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M12 16V4m0 0-4 4m4-4 4 4" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <p><strong>Drop your .md file here</strong> or click to browse</p>
-            <p class="hint">Markdown files up to 10MB</p>
+    <main class="workspace" id="workspace" tabindex="-1">
+      <header class="tool-header">
+        <h1 id="tool-title" tabindex="-1">Markdown to PDF</h1>
+        <p id="tool-description"></p>
+      </header>
+
+      <!-- Markdown to PDF -->
+      <section class="panel" data-tool-panel="md" aria-labelledby="tool-title">
+        <div class="segmented" role="tablist" aria-label="Markdown source">
+          <button class="segment" role="tab" type="button" id="md-tab-upload" data-tab="upload" aria-controls="md-panel-upload" aria-selected="true">Upload file</button>
+          <button class="segment" role="tab" type="button" id="md-tab-paste" data-tab="paste" aria-controls="md-panel-paste" aria-selected="false" tabindex="-1">Paste text</button>
+        </div>
+
+        <div role="tabpanel" id="md-panel-upload" aria-labelledby="md-tab-upload">
+          <div class="dropzone">
+            <svg class="dropzone-icon" aria-hidden="true"><use href="#i-upload"/></svg>
+            <p class="dropzone-title">Drop a Markdown file here</p>
+            <label class="btn btn-secondary">Choose file<input type="file" class="visually-hidden" accept=".md,.markdown,text/markdown,text/plain"></label>
+            <p class="dropzone-hint">.md or .markdown &middot; up to 10 MB</p>
           </div>
-        </label>
-        <div id="file-selected" class="file-selected" hidden>
-          <span id="file-name"></span>
-          <button id="file-clear" type="button" class="link-btn">Remove</button>
+          <div class="single-file" hidden>
+            <span class="single-file-name"></span>
+            <button type="button" class="link-btn single-file-clear">Remove</button>
+          </div>
+        </div>
+
+        <div role="tabpanel" id="md-panel-paste" aria-labelledby="md-tab-paste" hidden>
+          <label class="field">
+            <span class="visually-hidden">Markdown</span>
+            <textarea id="markdown-input" spellcheck="false" placeholder="# Title&#10;&#10;Write or paste Markdown here."></textarea>
+          </label>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-primary convert-btn" type="button" disabled>Convert to PDF</button>
+          <p class="status" role="status"></p>
         </div>
       </section>
 
-      <section class="tab-panel hidden" id="panel-paste">
-        <textarea id="markdown-input" placeholder="# Paste your Markdown here&#10;&#10;- Item one&#10;- Item two"></textarea>
+      <!-- JPG to PDF -->
+      <section class="panel" data-tool-panel="jpg" aria-labelledby="tool-title" hidden>
+        <div class="dropzone">
+          <svg class="dropzone-icon" aria-hidden="true"><use href="#i-image"/></svg>
+          <p class="dropzone-title">Drop images here</p>
+          <label class="btn btn-secondary">Choose images<input type="file" class="visually-hidden" accept="image/jpeg,image/png,image/webp,image/gif,image/tiff,image/avif" multiple></label>
+          <p class="dropzone-hint">JPG, PNG, WebP, GIF, TIFF &middot; up to 30 images, 15 MB each</p>
+        </div>
+
+        <div class="file-list-wrap" hidden>
+          <div class="file-list-header">
+            <span class="file-count"></span>
+            <button type="button" class="link-btn file-add">Add more</button>
+            <button type="button" class="link-btn file-clear">Clear all</button>
+          </div>
+          <p class="file-help">Drag to reorder, or use the arrow buttons.</p>
+          <ol class="file-list"></ol>
+          <p class="visually-hidden file-announcer" aria-live="polite"></p>
+        </div>
+
+        <fieldset class="options">
+          <legend class="visually-hidden">Page settings</legend>
+          <label class="field">Page size
+            <select id="opt-page-size">
+              <option value="a4">A4</option>
+              <option value="letter">US Letter</option>
+              <option value="fit">Same as image</option>
+            </select>
+          </label>
+          <label class="field">Orientation
+            <select id="opt-orientation">
+              <option value="portrait">Portrait</option>
+              <option value="landscape">Landscape</option>
+            </select>
+          </label>
+          <label class="field">Margin
+            <select id="opt-margin">
+              <option value="none">None</option>
+              <option value="small">Small</option>
+              <option value="big">Large</option>
+            </select>
+          </label>
+        </fieldset>
+
+        <div class="actions">
+          <button class="btn btn-primary convert-btn" type="button" disabled>Convert to PDF</button>
+          <p class="status" role="status"></p>
+        </div>
       </section>
 
-      <div class="actions">
-        <button id="convert-btn" class="convert-btn" type="button" disabled>Convert to PDF</button>
-        <span id="status" class="status" aria-live="polite"></span>
-      </div>
-    </main>
-
-    <main class="card" data-tool-panel="jpg" hidden>
-      <label class="dropzone" for="img-input">
-        <input type="file" id="img-input" accept="image/jpeg,image/png,image/webp,image/gif,image/tiff,image/avif" multiple hidden>
-        <div class="dropzone-content">
-          <svg class="dropzone-icon" viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5">
-            <rect x="3" y="4" width="18" height="16" rx="2"/>
-            <circle cx="8.5" cy="9.5" r="1.5"/>
-            <path d="m21 16-5-5-9 9" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <p><strong>Drop your images here</strong> or click to browse</p>
-          <p class="hint">JPG, PNG, WebP, GIF, TIFF &mdash; up to 30 images, 15MB each</p>
-        </div>
-      </label>
-
-      <div class="file-list-wrap" hidden>
-        <div class="file-list-header">
-          <span class="file-count"></span>
-          <span class="hint">Drag to reorder</span>
-          <label class="link-btn" for="img-input">+ Add more</label>
-          <button type="button" class="link-btn file-clear">Clear all</button>
-        </div>
-        <ol class="file-list"></ol>
-      </div>
-
-      <div class="options">
-        <label>Page size
-          <select id="opt-page-size">
-            <option value="a4">A4</option>
-            <option value="letter">US Letter</option>
-            <option value="fit">Same as image</option>
-          </select>
-        </label>
-        <label>Orientation
-          <select id="opt-orientation">
-            <option value="portrait">Portrait</option>
-            <option value="landscape">Landscape</option>
-          </select>
-        </label>
-        <label>Margin
-          <select id="opt-margin">
-            <option value="none">No margin</option>
-            <option value="small">Small</option>
-            <option value="big">Big</option>
-          </select>
-        </label>
-      </div>
-
-      <div class="actions">
-        <button class="convert-btn" type="button" disabled>Convert to PDF</button>
-        <span class="status" aria-live="polite"></span>
-      </div>
-    </main>
-
-    <main class="card" data-tool-panel="merge" hidden>
-      <label class="dropzone" for="merge-input">
-        <input type="file" id="merge-input" accept="application/pdf,.pdf" multiple hidden>
-        <div class="dropzone-content">
-          <svg class="dropzone-icon" viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M12 16V4m0 0-4 4m4-4 4 4" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <p><strong>Drop your PDFs here</strong> or click to browse</p>
-          <p class="hint">Up to 20 PDFs, 50MB each</p>
-        </div>
-      </label>
-
-      <div class="file-list-wrap" hidden>
-        <div class="file-list-header">
-          <span class="file-count"></span>
-          <span class="hint">Drag to reorder</span>
-          <label class="link-btn" for="merge-input">+ Add more</label>
-          <button type="button" class="link-btn file-clear">Clear all</button>
-        </div>
-        <ol class="file-list"></ol>
-      </div>
-
-      <div class="actions">
-        <button class="convert-btn" type="button" disabled>Merge PDF</button>
-        <span class="status" aria-live="polite"></span>
-        <span class="hint merge-summary"></span>
-      </div>
-    </main>
-
-    <main class="card" data-tool-panel="split" hidden>
-      <label class="dropzone" for="split-input">
-        <input type="file" id="split-input" accept="application/pdf,.pdf" hidden>
-        <div class="dropzone-content">
-          <svg class="dropzone-icon" viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M12 16V4m0 0-4 4m4-4 4 4" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <p><strong>Drop a PDF here</strong> or click to browse</p>
-          <p class="hint">One PDF up to 100MB</p>
-        </div>
-      </label>
-      <div class="file-selected single-file" hidden>
-        <span class="single-file-name"></span>
-        <button type="button" class="link-btn single-file-clear">Remove</button>
-      </div>
-
-      <div class="split-body" hidden>
-        <div class="tabs split-modes">
-          <button class="tab active" type="button" data-mode="ranges">Custom ranges</button>
-          <button class="tab" type="button" data-mode="fixed">Fixed ranges</button>
-          <button class="tab" type="button" data-mode="extract">Extract pages</button>
+      <!-- Merge PDF -->
+      <section class="panel" data-tool-panel="merge" aria-labelledby="tool-title" hidden>
+        <div class="dropzone">
+          <svg class="dropzone-icon" aria-hidden="true"><use href="#i-merge"/></svg>
+          <p class="dropzone-title">Drop PDFs here</p>
+          <label class="btn btn-secondary">Choose PDFs<input type="file" class="visually-hidden" accept="application/pdf,.pdf" multiple></label>
+          <p class="dropzone-hint">2 to 20 PDFs &middot; 50 MB each</p>
         </div>
 
-        <div class="split-option" data-for="ranges">
-          <label class="field">Ranges &mdash; each becomes its own PDF
-            <input type="text" id="split-ranges" placeholder="e.g. 1-3, 4-6, 9-" autocomplete="off">
+        <div class="file-list-wrap" hidden>
+          <div class="file-list-header">
+            <span class="file-count"></span>
+            <span class="merge-summary"></span>
+            <button type="button" class="link-btn file-add">Add more</button>
+            <button type="button" class="link-btn file-clear">Clear all</button>
+          </div>
+          <p class="file-help">Files are merged left to right. Drag to reorder, or use the arrow buttons.</p>
+          <ol class="file-list"></ol>
+          <p class="visually-hidden file-announcer" aria-live="polite"></p>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-primary convert-btn" type="button" disabled>Merge PDFs</button>
+          <p class="status" role="status"></p>
+        </div>
+      </section>
+
+      <!-- Split PDF -->
+      <section class="panel" data-tool-panel="split" aria-labelledby="tool-title" hidden>
+        <div class="dropzone">
+          <svg class="dropzone-icon" aria-hidden="true"><use href="#i-split"/></svg>
+          <p class="dropzone-title">Drop a PDF here</p>
+          <label class="btn btn-secondary">Choose PDF<input type="file" class="visually-hidden" accept="application/pdf,.pdf"></label>
+          <p class="dropzone-hint">One PDF &middot; up to 100 MB</p>
+        </div>
+        <div class="single-file" hidden>
+          <span class="single-file-name"></span>
+          <button type="button" class="link-btn single-file-clear">Remove</button>
+        </div>
+
+        <div class="split-body" hidden>
+          <div class="segmented" role="tablist" aria-label="Split mode">
+            <button class="segment" role="tab" type="button" data-mode="ranges" aria-selected="true">Custom ranges</button>
+            <button class="segment" role="tab" type="button" data-mode="fixed" aria-selected="false" tabindex="-1">Every N pages</button>
+            <button class="segment" role="tab" type="button" data-mode="extract" aria-selected="false" tabindex="-1">Extract pages</button>
+          </div>
+
+          <div class="split-option" data-for="ranges">
+            <label class="field">Ranges, each becomes its own PDF
+              <input type="text" id="split-ranges" placeholder="e.g. 1-3, 4-6, 9-" autocomplete="off" spellcheck="false">
+            </label>
+            <label class="check"><input type="checkbox" id="split-ranges-merge"> Combine all ranges into one PDF</label>
+          </div>
+          <div class="split-option" data-for="fixed" hidden>
+            <label class="field">Pages per file
+              <input type="number" id="split-every" min="1" value="1" inputmode="numeric">
+            </label>
+          </div>
+          <div class="split-option" data-for="extract" hidden>
+            <label class="check"><input type="checkbox" id="split-all" checked> Extract every page as its own PDF</label>
+            <label class="field">Pages to extract, or select them below
+              <input type="text" id="split-pages" placeholder="e.g. 1, 3, 5-8" autocomplete="off" spellcheck="false" disabled>
+            </label>
+            <label class="check"><input type="checkbox" id="split-extract-merge"> Combine extracted pages into one PDF</label>
+          </div>
+
+          <p class="split-summary" aria-live="polite"></p>
+          <ol class="page-grid" aria-label="Pages"></ol>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-primary convert-btn" type="button" disabled>Split PDF</button>
+          <p class="status" role="status"></p>
+        </div>
+      </section>
+
+      <!-- Compress PDF -->
+      <section class="panel" data-tool-panel="compress" aria-labelledby="tool-title" hidden>
+        <div class="dropzone">
+          <svg class="dropzone-icon" aria-hidden="true"><use href="#i-compress"/></svg>
+          <p class="dropzone-title">Drop a PDF here</p>
+          <label class="btn btn-secondary">Choose PDF<input type="file" class="visually-hidden" accept="application/pdf,.pdf"></label>
+          <p class="dropzone-hint">One PDF &middot; up to 100 MB</p>
+        </div>
+        <div class="single-file" hidden>
+          <span class="single-file-name"></span>
+          <button type="button" class="link-btn single-file-clear">Remove</button>
+        </div>
+
+        <fieldset class="level-options" hidden>
+          <legend>Compression level</legend>
+          <label class="level">
+            <input type="radio" name="compress-level" value="extreme">
+            <span class="level-title">Extreme</span>
+            <span class="level-desc">Smallest file. Images drop to 72 dpi, fine for screens.</span>
           </label>
-          <label class="check"><input type="checkbox" id="split-ranges-merge"> Merge all ranges into one PDF</label>
-        </div>
-        <div class="split-option" data-for="fixed" hidden>
-          <label class="field">Split every
-            <span class="inline-input"><input type="number" id="split-every" min="1" value="1"> pages</span>
+          <label class="level">
+            <input type="radio" name="compress-level" value="recommended" checked>
+            <span class="level-title">Recommended</span>
+            <span class="level-desc">Good balance. Images at 150 dpi.</span>
           </label>
-        </div>
-        <div class="split-option" data-for="extract" hidden>
-          <label class="check"><input type="checkbox" id="split-all" checked> Extract every page into its own PDF</label>
-          <label class="field">Pages to extract &mdash; or click pages below
-            <input type="text" id="split-pages" placeholder="e.g. 1, 3, 5-8" autocomplete="off" disabled>
+          <label class="level">
+            <input type="radio" name="compress-level" value="low">
+            <span class="level-title">Light</span>
+            <span class="level-desc">Print quality. Images at 300 dpi.</span>
           </label>
-          <label class="check"><input type="checkbox" id="split-extract-merge"> Merge extracted pages into one PDF</label>
+        </fieldset>
+
+        <div class="actions">
+          <button class="btn btn-primary convert-btn" type="button" disabled>Compress PDF</button>
+          <p class="status" role="status"></p>
+        </div>
+      </section>
+
+      <!-- PDF to Word -->
+      <section class="panel" data-tool-panel="word" aria-labelledby="tool-title" hidden>
+        <div class="dropzone">
+          <svg class="dropzone-icon" aria-hidden="true"><use href="#i-word"/></svg>
+          <p class="dropzone-title">Drop a PDF here</p>
+          <label class="btn btn-secondary">Choose PDF<input type="file" class="visually-hidden" accept="application/pdf,.pdf"></label>
+          <p class="dropzone-hint">One PDF &middot; up to 50 MB</p>
+        </div>
+        <div class="single-file" hidden>
+          <span class="single-file-name"></span>
+          <button type="button" class="link-btn single-file-clear">Remove</button>
         </div>
 
-        <p class="split-summary"></p>
-        <ol class="page-grid"></ol>
-      </div>
+        <p class="tool-note">Works best on PDFs with selectable text. Scanned pages come through as images.</p>
 
-      <div class="actions">
-        <button class="convert-btn" type="button" disabled>Split PDF</button>
-        <span class="status" aria-live="polite"></span>
-      </div>
-    </main>
-
-    <main class="card" data-tool-panel="compress" hidden>
-      <label class="dropzone" for="compress-input">
-        <input type="file" id="compress-input" accept="application/pdf,.pdf" hidden>
-        <div class="dropzone-content">
-          <svg class="dropzone-icon" viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M12 16V4m0 0-4 4m4-4 4 4" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <p><strong>Drop a PDF here</strong> or click to browse</p>
-          <p class="hint">One PDF up to 100MB</p>
+        <div class="actions">
+          <button class="btn btn-primary convert-btn" type="button" disabled>Convert to Word</button>
+          <p class="status" role="status"></p>
         </div>
-      </label>
-      <div class="file-selected single-file" hidden>
-        <span class="single-file-name"></span>
-        <button type="button" class="link-btn single-file-clear">Remove</button>
-      </div>
-
-      <fieldset class="level-options" hidden>
-        <legend>Compression level</legend>
-        <label class="level">
-          <input type="radio" name="compress-level" value="extreme">
-          <span class="level-title">Extreme compression</span>
-          <span class="level-desc">Smallest file, lower image quality (72 dpi)</span>
-        </label>
-        <label class="level">
-          <input type="radio" name="compress-level" value="recommended" checked>
-          <span class="level-title">Recommended</span>
-          <span class="level-desc">Good quality, good compression (150 dpi)</span>
-        </label>
-        <label class="level">
-          <input type="radio" name="compress-level" value="low">
-          <span class="level-title">Less compression</span>
-          <span class="level-desc">High quality, larger file (300 dpi)</span>
-        </label>
-      </fieldset>
-
-      <div class="actions">
-        <button class="convert-btn" type="button" disabled>Compress PDF</button>
-        <span class="status" aria-live="polite"></span>
-      </div>
+      </section>
     </main>
-
-    <main class="card" data-tool-panel="word" hidden>
-      <label class="dropzone" for="word-input">
-        <input type="file" id="word-input" accept="application/pdf,.pdf" hidden>
-        <div class="dropzone-content">
-          <svg class="dropzone-icon" viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M12 16V4m0 0-4 4m4-4 4 4" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <p><strong>Drop a PDF here</strong> or click to browse</p>
-          <p class="hint">One PDF up to 50MB &mdash; converted to an editable .docx</p>
-        </div>
-      </label>
-      <div class="file-selected single-file" hidden>
-        <span class="single-file-name"></span>
-        <button type="button" class="link-btn single-file-clear">Remove</button>
-      </div>
-
-      <p class="hint tool-note">Works best with PDFs that contain real text. Scanned pages come through as images.</p>
-
-      <div class="actions">
-        <button class="convert-btn" type="button" disabled>Convert to Word</button>
-        <span class="status" aria-live="polite"></span>
-      </div>
-    </main>
-
-    <footer class="footer">
-      <p>Files are processed on this server and are not stored.</p>
-    </footer>
   </div>
 
   <script type="module" src="js/main.js"></script>

@@ -1,49 +1,32 @@
-import { bindFileDrop, runConversion } from '../common.js';
+import { bindTabs, createSingleFilePicker, formatBytes, runConversion } from '../common.js';
+
+const isMarkdown = (f) => /\.(md|markdown|txt)$/i.test(f.name) || f.type === 'text/markdown';
 
 export function initMarkdown(root) {
-  const tabs = root.querySelectorAll('.tab');
-  const panels = {
-    upload: root.querySelector('#panel-upload'),
-    paste: root.querySelector('#panel-paste'),
-  };
-  const dropzone = root.querySelector('#dropzone');
-  const fileInput = root.querySelector('#file-input');
-  const fileSelected = root.querySelector('#file-selected');
-  const fileNameEl = root.querySelector('#file-name');
-  const fileClearBtn = root.querySelector('#file-clear');
   const markdownInput = root.querySelector('#markdown-input');
-  const convertBtn = root.querySelector('#convert-btn');
-  const statusEl = root.querySelector('#status');
+  const convertBtn = root.querySelector('.convert-btn');
+  const statusEl = root.querySelector('.status');
 
-  let activeTab = 'upload';
-  let selectedFile = null;
+  let source = 'upload';
 
   function updateConvertState() {
-    const hasContent = activeTab === 'upload' ? !!selectedFile : markdownInput.value.trim().length > 0;
-    convertBtn.disabled = !hasContent;
+    convertBtn.disabled = source === 'upload' ? !picker.file : !markdownInput.value.trim();
   }
 
-  function setActiveTab(tab) {
-    activeTab = tab;
-    tabs.forEach((btn) => btn.classList.toggle('active', btn.dataset.tab === tab));
-    panels.upload.classList.toggle('hidden', tab !== 'upload');
-    panels.paste.classList.toggle('hidden', tab !== 'paste');
+  const picker = createSingleFilePicker(root.querySelector('#md-panel-upload'), {
+    accept: isMarkdown,
+    rejectMessage: 'Choose a Markdown file (.md or .markdown).',
+    statusEl,
+    onChange(file) {
+      if (file) picker.setLabel(`${file.name} · ${formatBytes(file.size)}`);
+      updateConvertState();
+    },
+  });
+
+  bindTabs(root.querySelector('[role=tablist]'), (tab) => {
+    source = tab.dataset.tab;
     updateConvertState();
-  }
-
-  function setFile(file) {
-    selectedFile = file || null;
-    fileSelected.hidden = !selectedFile;
-    dropzone.hidden = !!selectedFile;
-    if (selectedFile) fileNameEl.textContent = selectedFile.name;
-    else fileInput.value = '';
-    updateConvertState();
-  }
-
-  tabs.forEach((btn) => btn.addEventListener('click', () => setActiveTab(btn.dataset.tab)));
-  fileInput.addEventListener('change', (e) => setFile(e.target.files[0]));
-  fileClearBtn.addEventListener('click', () => setFile(null));
-  bindFileDrop(dropzone, dropzone, (files) => setFile(files[0]));
+  });
   markdownInput.addEventListener('input', updateConvertState);
 
   convertBtn.addEventListener('click', async () => {
@@ -51,11 +34,11 @@ export function initMarkdown(root) {
       button: convertBtn,
       statusEl,
       fallbackName: 'document.pdf',
-      done: 'Done! PDF downloaded.',
+      done: 'Done. Your PDF has downloaded.',
       request() {
-        if (activeTab === 'upload' && selectedFile) {
+        if (source === 'upload') {
           const formData = new FormData();
-          formData.append('file', selectedFile);
+          formData.append('file', picker.file);
           return fetch('/api/convert', { method: 'POST', body: formData });
         }
         return fetch('/api/convert', {
