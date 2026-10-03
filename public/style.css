@@ -618,3 +618,7 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+.tool-note {
+  margin: 1rem 0 0;
+}

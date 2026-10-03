@@ -9,6 +9,7 @@ const { UserError } = require('./lib/errors');
 const { imagesToPdf } = require('./lib/images-to-pdf');
 const { mergePdfs, splitPdf } = require('./lib/pdf-tools');
 const { compressPdf } = require('./lib/compress');
+const { pdfToWord } = require('./lib/pdf-to-word');
 
 const PORT = process.env.PORT || 3000;
 
@@ -246,6 +247,15 @@ app.post('/api/compress', uploadFiles('file', { maxFiles: 1, maxSizeMB: 100 }), 
   res.setHeader('X-Original-Size', result.originalSize);
   res.setHeader('X-Compressed-Size', result.compressedSize);
   sendPdf(res, result.bytes, `${baseNameOf(file.name)}_compressed`);
+}));
+
+app.post('/api/pdf-to-word', uploadFiles('file', { maxFiles: 1, maxSizeMB: 50 }), route(async (req, res) => {
+  const [file] = requireFiles(req, 'PDF');
+  sendDownload(res, await pdfToWord(file), {
+    baseName: baseNameOf(file.name),
+    ext: 'docx',
+    type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  });
 }));
 
 app.listen(PORT, () => {

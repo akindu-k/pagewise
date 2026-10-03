@@ -9,6 +9,7 @@ A small self-hosted PDF toolkit. Pick a tool from the menu at the top of the pag
 | Merge PDF | `/#merge-pdf` | Up to 20 PDFs with page previews, drag to reorder, combined into one PDF. |
 | Split PDF | `/#split-pdf` | Split by custom ranges, every N pages, or extract chosen pages; previews which file each page goes to. |
 | Compress PDF | `/#compress-pdf` | Three levels (extreme / recommended / less) via Ghostscript; reports the size saved. |
+| PDF to Word | `/#pdf-to-word` | Converts a PDF into an editable `.docx` (text, headings, bordered tables, images) via pdf2docx. |
 
 ## Stack
 
@@ -20,6 +21,7 @@ A small self-hosted PDF toolkit. Pick a tool from the menu at the top of the pag
 - **sharp** — reads image metadata, fixes EXIF rotation, converts WebP/GIF/TIFF/AVIF
 - **pdf.js** (`pdfjs-dist`) — page thumbnails in the browser
 - **Ghostscript** (`gs`, system package) — PDF compression
+- **pdf2docx** (Python, in `.venv`) — PDF to Word
 - **multer** — file upload handling
 - Vanilla HTML/CSS/JS frontend (ES modules, one per tool in `public/js/tools/`)
 
@@ -46,6 +48,15 @@ sudo apt-get install -y ghostscript   # macOS: brew install ghostscript
 ```
 
 The other tools work without it; Compress PDF returns an error if `gs` is missing.
+
+### Python + pdf2docx (PDF to Word)
+
+```bash
+sudo apt-get install -y python3-venv   # if not already installed
+npm run setup:python                   # creates .venv and installs requirements.txt
+```
+
+The server uses `$PDF2DOCX_PYTHON` if set, else `.venv/bin/python`, else `python3`.
 
 ## API
 
@@ -106,3 +117,13 @@ browser at `/shared/`, so the preview and the server always agree.
 
 Responds with the compressed PDF plus `X-Original-Size` / `X-Compressed-Size`
 headers. If compression wouldn't make the file smaller, the original is returned.
+
+### `POST /api/pdf-to-word` — PDF to Word
+
+`multipart/form-data` with one `file` (PDF, max 50 MB). Responds with a `.docx`.
+
+Notes on output quality:
+- Text, headings, bordered tables and images convert well. Borderless tables come through as text
+  (guessing them turns ordinary bullet lists into tables).
+- Large photos are re-encoded as JPEG inside the `.docx` to keep the file small.
+- Scanned PDFs have no text layer, so pages come through as images (no OCR).

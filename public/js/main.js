@@ -3,6 +3,7 @@ import { initImages } from './tools/images.js';
 import { initMerge } from './tools/merge.js';
 import { initSplit } from './tools/split.js';
 import { initCompress } from './tools/compress.js';
+import { initWord } from './tools/word.js';
 
 // Each tool owns a <main data-tool="..."> panel and a #hash route.
 const TOOLS = {
@@ -40,6 +41,13 @@ const TOOLS = {
     title: 'Compress PDF',
     tagline: 'Shrink PDF file size while keeping the quality you need.',
     init: initCompress,
+  },
+  word: {
+    hash: '#pdf-to-word',
+    logo: ['PDF', 'DOCX'],
+    title: 'PDF to Word',
+    tagline: 'Turn a PDF into an editable Word document.',
+    init: initWord,
   },
 };
 
