@@ -3,21 +3,25 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MD to PDF &mdash; Markdown to PDF Converter</title>
+<title>PDF Converter &mdash; Markdown &amp; JPG to PDF</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="page">
     <header class="header">
       <div class="logo">
-        <span class="logo-mark">MD</span>
+        <span class="logo-mark" id="logo-source">MD</span>
         <span class="logo-arrow">&rarr;</span>
         <span class="logo-mark pdf">PDF</span>
       </div>
-      <p class="tagline">Convert Markdown files to polished PDF documents, right in your browser.</p>
+      <p class="tagline" id="tagline">Convert Markdown files to polished PDF documents, right in your browser.</p>
+      <nav class="modes" aria-label="Converter">
+        <a class="mode active" href="#md-to-pdf" data-mode="md">Markdown to PDF</a>
+        <a class="mode" href="#jpg-to-pdf" data-mode="jpg">JPG to PDF</a>
+      </nav>
     </header>
 
-    <main class="card">
+    <main class="card" id="md-converter">
       <div class="tabs">
         <button class="tab active" data-tab="upload" type="button">Upload File</button>
         <button class="tab" data-tab="paste" type="button">Paste Markdown</button>
@@ -51,8 +55,61 @@
       </div>
     </main>
 
+    <main class="card" id="jpg-converter" hidden>
+      <label id="img-dropzone" class="dropzone" for="img-input">
+        <input type="file" id="img-input" accept="image/jpeg,image/png,image/webp,image/gif,image/tiff,image/avif" multiple hidden>
+        <div class="dropzone-content">
+          <svg class="dropzone-icon" viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="3" y="4" width="18" height="16" rx="2"/>
+            <circle cx="8.5" cy="9.5" r="1.5"/>
+            <path d="m21 16-5-5-9 9" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <p><strong>Drop your images here</strong> or click to browse</p>
+          <p class="hint">JPG, PNG, WebP, GIF, TIFF &mdash; up to 30 images, 15MB each</p>
+        </div>
+      </label>
+
+      <div id="img-list-wrap" hidden>
+        <div class="img-list-header">
+          <span id="img-count"></span>
+          <span class="hint">Drag to reorder</span>
+          <label class="link-btn" for="img-input">+ Add more</label>
+          <button id="img-clear" type="button" class="link-btn">Clear all</button>
+        </div>
+        <ol id="img-list" class="img-list"></ol>
+      </div>
+
+      <div class="options">
+        <label>Page size
+          <select id="opt-page-size">
+            <option value="a4">A4</option>
+            <option value="letter">US Letter</option>
+            <option value="fit">Same as image</option>
+          </select>
+        </label>
+        <label>Orientation
+          <select id="opt-orientation">
+            <option value="portrait">Portrait</option>
+            <option value="landscape">Landscape</option>
+          </select>
+        </label>
+        <label>Margin
+          <select id="opt-margin">
+            <option value="none">No margin</option>
+            <option value="small">Small</option>
+            <option value="big">Big</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="actions">
+        <button id="img-convert-btn" class="convert-btn" type="button" disabled>Convert to PDF</button>
+        <span id="img-status" class="status" aria-live="polite"></span>
+      </div>
+    </main>
+
     <footer class="footer">
-      <p>Runs locally &mdash; Markdown is rendered with GitHub-flavored styling and converted via headless Chromium.</p>
+      <p>Markdown is rendered with GitHub-flavored styling via headless Chromium. Images are embedded at full quality.</p>
     </footer>
   </div>
 
