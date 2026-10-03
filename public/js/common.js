@@ -289,3 +289,52 @@ export function pdfPreview(entry, figure, rerender) {
       rerender();
     });
 }
+
+// ---------- Single file picker ----------
+
+export const isPdfFile = (f) => f.type === 'application/pdf' || /\.pdf$/i.test(f.name);
+
+/**
+ * Wires up a one-file dropzone. Expects inside `root`: .dropzone,
+ * input[type=file], .single-file, .single-file-name, .single-file-clear.
+ *
+ * @param {HTMLElement} root
+ * @param {object} opts
+ * @param {(f: File) => boolean} opts.accept
+ * @param {string} opts.rejectMessage  shown when a dropped file isn't accepted
+ * @param {HTMLElement} opts.statusEl
+ * @param {(file: File|null) => void} opts.onChange
+ */
+export function createSingleFilePicker(root, { accept, rejectMessage, statusEl, onChange }) {
+  const dropzone = root.querySelector('.dropzone');
+  const input = root.querySelector('input[type=file]');
+  const bar = root.querySelector('.single-file');
+  const nameEl = root.querySelector('.single-file-name');
+  const clearBtn = root.querySelector('.single-file-clear');
+  let file = null;
+
+  function set(next) {
+    file = next;
+    dropzone.hidden = !!file;
+    bar.hidden = !file;
+    nameEl.textContent = file ? file.name : '';
+    if (!file) input.value = '';
+    setStatus(statusEl, '');
+    onChange(file);
+  }
+
+  function pick(files) {
+    const match = Array.from(files).find(accept);
+    if (match) set(match);
+    else setStatus(statusEl, rejectMessage, 'error');
+  }
+
+  input.addEventListener('change', () => input.files.length && pick(input.files));
+  clearBtn.addEventListener('click', () => set(null));
+  bindFileDrop(root, dropzone, pick);
+
+  return {
+    get file() { return file; },
+    setLabel(text) { nameEl.textContent = text; },
+  };
+}

@@ -5,3 +5,5 @@ node_modules
 *.pdf
 .env
 .env.local
+.venv
+__pycache__

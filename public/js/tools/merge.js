@@ -1,6 +1,4 @@
-import { createFileList, formatBytes, pdfPreview, runConversion, setStatus } from '../common.js';
-
-const isPdf = (f) => f.type === 'application/pdf' || /\.pdf$/i.test(f.name);
+import { createFileList, formatBytes, isPdfFile, pdfPreview, runConversion, setStatus } from '../common.js';
 
 export function initMerge(root) {
   const convertBtn = root.querySelector('.convert-btn');
@@ -13,7 +11,7 @@ export function initMerge(root) {
   const list = createFileList(root, {
     max: 20,
     noun: 'PDF',
-    accept: isPdf,
+    accept: isPdfFile,
     statusEl,
     preview: pdfPreview,
     caption: (entry) => {
