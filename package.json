@@ -1,7 +1,7 @@
 {
-  "name": "md-to-pdf",
+  "name": "pagewise",
   "version": "1.0.0",
-  "description": "",
+  "description": "Free, self-hostable PDF tools: merge, split, compress, JPG/Markdown to PDF and PDF to Word.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

@@ -376,7 +376,7 @@ ${urls}
 });
 
 app.listen(PORT, () => {
-  console.log(`md-to-pdf server running at http://localhost:${PORT}`);
+  console.log(`Pagewise running at http://localhost:${PORT}`);
 });
 
 process.on('SIGINT', async () => {

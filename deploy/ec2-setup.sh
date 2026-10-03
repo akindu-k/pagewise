@@ -1,23 +1,25 @@
 #!/usr/bin/env bash
 #
-# One-shot setup for running md-to-pdf on a fresh Ubuntu 24.04 EC2 instance.
+# One-shot setup for running Pagewise on a fresh Ubuntu 24.04 EC2 instance.
 # Installs Node 20, the Chromium runtime libraries Puppeteer needs, Ghostscript
 # (Compress PDF), Python + pdf2docx (PDF to Word), clones the
 # repo, installs dependencies, and registers an always-on systemd service.
 #
 # Usage (on the instance):
-#   # public repo:
-#   curl -fsSL https://raw.githubusercontent.com/akindu-k/md-to-pdf/main/deploy/ec2-setup.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/akindu-k/pagewise/main/deploy/ec2-setup.sh | bash
 #
-#   # private repo — provide a GitHub token with read access first:
+#   # for a private fork, provide a GitHub token with read access first:
 #   export GITHUB_TOKEN=github_pat_xxx
-#   curl -fsSL https://<token>@raw.githubusercontent.com/akindu-k/md-to-pdf/main/deploy/ec2-setup.sh | bash
+#   curl -fsSL https://<token>@raw.githubusercontent.com/<you>/pagewise/main/deploy/ec2-setup.sh | bash
 #
 # Re-running is safe (idempotent): it pulls latest and restarts the service.
+# Servers set up before the rename (md-to-pdf folder and service) are
+# migrated to the new pagewise names automatically.
 set -euo pipefail
 
 REPO_OWNER="akindu-k"
-REPO_NAME="md-to-pdf"
+REPO_NAME="pagewise"
+SERVICE="pagewise"
 APP_USER="${SUDO_USER:-ubuntu}"
 APP_HOME="/home/${APP_USER}"
 APP_DIR="${APP_HOME}/${REPO_NAME}"
@@ -66,12 +68,26 @@ if ! command -v node >/dev/null 2>&1 || [ "$(node -v | cut -d. -f1 | tr -d v)" -
 fi
 node -v
 
+# Migrate an install from before the repo was renamed from md-to-pdf.
+OLD_DIR="${APP_HOME}/md-to-pdf"
+if [ -f /etc/systemd/system/md-to-pdf.service ]; then
+  echo "==> Migrating the old md-to-pdf service to ${SERVICE}"
+  sudo systemctl disable --now md-to-pdf || true
+  sudo rm -f /etc/systemd/system/md-to-pdf.service
+  sudo systemctl daemon-reload
+fi
+if [ -d "${OLD_DIR}/.git" ] && [ ! -d "${APP_DIR}" ]; then
+  echo "==> Moving ${OLD_DIR} to ${APP_DIR}"
+  sudo -u "${APP_USER}" mv "${OLD_DIR}" "${APP_DIR}"
+fi
+
 echo "==> Fetching source into ${APP_DIR}"
 CLONE_URL="https://github.com/${REPO_OWNER}/${REPO_NAME}.git"
 if [ -n "${GITHUB_TOKEN:-}" ]; then
   CLONE_URL="https://${GITHUB_TOKEN}@github.com/${REPO_OWNER}/${REPO_NAME}.git"
 fi
 if [ -d "${APP_DIR}/.git" ]; then
+  sudo -u "${APP_USER}" git -C "${APP_DIR}" remote set-url origin "${CLONE_URL}"
   sudo -u "${APP_USER}" git -C "${APP_DIR}" pull --ff-only
 else
   sudo -u "${APP_USER}" git clone "${CLONE_URL}" "${APP_DIR}"
@@ -84,9 +100,9 @@ echo "==> Installing pdf2docx (PDF to Word) into ${APP_DIR}/.venv"
 sudo -u "${APP_USER}" bash -c "cd '${APP_DIR}' && npm run setup:python"
 
 echo "==> Installing systemd service"
-sudo tee /etc/systemd/system/md-to-pdf.service >/dev/null <<UNIT
+sudo tee "/etc/systemd/system/${SERVICE}.service" >/dev/null <<UNIT
 [Unit]
-Description=md-to-pdf (Markdown to PDF converter)
+Description=Pagewise (PDF tools)
 After=network.target
 
 [Service]
@@ -106,12 +122,12 @@ WantedBy=multi-user.target
 UNIT
 
 sudo systemctl daemon-reload
-sudo systemctl enable md-to-pdf
-sudo systemctl restart md-to-pdf
+sudo systemctl enable "${SERVICE}"
+sudo systemctl restart "${SERVICE}"
 
 sleep 2
 echo "==> Service status"
-sudo systemctl --no-pager --lines=5 status md-to-pdf || true
+sudo systemctl --no-pager --lines=5 status "${SERVICE}" || true
 
 PUBLIC_DNS="$(curl -fsSL http://169.254.169.254/latest/meta-data/public-hostname 2>/dev/null || echo '<your-ec2-public-dns>')"
 echo ""

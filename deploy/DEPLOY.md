@@ -1,4 +1,4 @@
-# Deploying md-to-pdf on AWS EC2 (always-on, no cold start)
+# Deploying Pagewise on AWS EC2 (always-on, no cold start)
 
 This runs the app 24/7 on a small EC2 instance, so there is **no idle spin-down**
 like a free PaaS tier. Covered by the AWS Free Tier (`t3.micro`, 750 hrs/month for
@@ -31,12 +31,12 @@ the repo, and registers a `systemd` service):
 ```bash
 ssh -i your-key.pem ubuntu@<EC2_PUBLIC_DNS>
 
-# The repo is PRIVATE, so provide a GitHub token with read access.
-# Create one at: GitHub → Settings → Developer settings →
-#   Fine-grained tokens → repo md-to-pdf → Contents: Read-only
-export GITHUB_TOKEN=github_pat_xxxxx
+curl -fsSL https://raw.githubusercontent.com/akindu-k/pagewise/main/deploy/ec2-setup.sh | bash
 
-curl -fsSL "https://${GITHUB_TOKEN}@raw.githubusercontent.com/akindu-k/md-to-pdf/main/deploy/ec2-setup.sh" | bash
+# Optional: set the public URL for canonical links and the sitemap first
+#   export SITE_URL=https://pagewise.example.com
+# Deploying a private fork? Export a read-only GitHub token as GITHUB_TOKEN
+# and use https://${GITHUB_TOKEN}@raw.githubusercontent.com/<you>/pagewise/...
 ```
 
 When it finishes it prints the URL. Open **`http://<EC2_PUBLIC_DNS>:3000`**.
@@ -44,13 +44,14 @@ When it finishes it prints the URL. Open **`http://<EC2_PUBLIC_DNS>:3000`**.
 ## 3. Managing the service
 
 ```bash
-sudo systemctl status md-to-pdf     # health
-sudo journalctl -u md-to-pdf -f     # live logs
-sudo systemctl restart md-to-pdf    # restart
+sudo systemctl status pagewise     # health
+sudo journalctl -u pagewise -f     # live logs
+sudo systemctl restart pagewise    # restart
 ```
 
 To deploy new commits later, just re-run the setup command — it pulls latest,
-reinstalls, and restarts.
+reinstalls, and restarts. Servers set up before the rename (an `md-to-pdf`
+folder and service) are migrated to `pagewise` automatically.
 
 ## 4. (Optional) A real domain + HTTPS
 

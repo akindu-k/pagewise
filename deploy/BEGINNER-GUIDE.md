@@ -1,4 +1,4 @@
-# Beginner's guide: deploy md-to-pdf on AWS EC2
+# Beginner's guide: deploy Pagewise on AWS EC2
 
 No prior AWS experience needed. This walks you through every click. Budget ~20 min.
 An EC2 instance is just a Linux computer in the cloud that you rent and stay
@@ -27,13 +27,13 @@ If unsure, tell me how you log in to AWS and I'll confirm.
    ap-south-1*). Remember which one — your instance lives there.
 4. Click the orange **Launch instance** button.
 5. Fill the form:
-   - **Name:** `md-to-pdf`
+   - **Name:** `pagewise`
    - **Application and OS Image:** click **Ubuntu**, then pick
      **Ubuntu Server 24.04 LTS** (must say *Free tier eligible*).
    - **Instance type:** `t3.micro` (or `t2.micro`) — should say *Free tier eligible*.
    - **Key pair (login):** click **Create new key pair**.
-     - Name: `md-to-pdf-key`, type **RSA**, format **.pem**.
-     - Click **Create** — a file `md-to-pdf-key.pem` downloads. **Keep it safe;
+     - Name: `pagewise-key`, type **RSA**, format **.pem**.
+     - Click **Create** — a file `pagewise-key.pem` downloads. **Keep it safe;
        you can't re-download it.** Move it somewhere you'll find it, e.g. your
        WSL home folder.
    - **Network settings** → click **Edit**, then under *Firewall (security
@@ -66,24 +66,25 @@ your browser. If that works, skip to Phase 4.
 ```bash
 # go to where the key downloaded (adjust the path)
 cd ~
-chmod 400 md-to-pdf-key.pem          # lock down the key (required once)
+chmod 400 pagewise-key.pem          # lock down the key (required once)
 
 # copy your instance's "Public IPv4 DNS" from the console and use it here:
-ssh -i md-to-pdf-key.pem ubuntu@<PASTE_PUBLIC_DNS_HERE>
+ssh -i pagewise-key.pem ubuntu@<PASTE_PUBLIC_DNS_HERE>
 ```
 
 Type `yes` when asked about authenticity. You're now on the server (prompt shows
 `ubuntu@ip-...`).
 
-## Phase 4 — Get a GitHub token (repo is private)
+## Phase 4 — GitHub token (skip this: the repo is public)
 
-The server needs permission to download your private code.
+Only needed if you deploy your own **private** fork, so the server can download
+the code.
 
 1. GitHub → your avatar → **Settings** → **Developer settings** (bottom of left
    menu) → **Personal access tokens** → **Fine-grained tokens** →
    **Generate new token**.
 2. Name: `ec2-deploy`. Expiration: your choice.
-3. **Repository access:** *Only select repositories* → pick **md-to-pdf**.
+3. **Repository access:** *Only select repositories* → pick your fork.
 4. **Permissions:** expand *Repository permissions* → set **Contents** to
    **Read-only**.
 5. **Generate token** and **copy it** (starts with `github_pat_...`). You won't
@@ -91,11 +92,10 @@ The server needs permission to download your private code.
 
 ## Phase 5 — Install and run (one command)
 
-In the server terminal, paste this (replace the token):
+In the server terminal, paste this:
 
 ```bash
-export GITHUB_TOKEN=github_pat_PASTE_YOURS_HERE
-curl -fsSL "https://${GITHUB_TOKEN}@raw.githubusercontent.com/akindu-k/md-to-pdf/main/deploy/ec2-setup.sh" | bash
+curl -fsSL https://raw.githubusercontent.com/akindu-k/pagewise/main/deploy/ec2-setup.sh | bash
 ```
 
 It runs for a few minutes (installs Node, Chromium libraries, downloads the
@@ -117,9 +117,9 @@ http://<YOUR_EC2_PUBLIC_DNS>:3000
 ## Everyday commands (on the server)
 
 ```bash
-sudo systemctl status md-to-pdf     # is it running?
-sudo journalctl -u md-to-pdf -f     # watch logs (Ctrl+C to exit)
-sudo systemctl restart md-to-pdf    # restart it
+sudo systemctl status pagewise     # is it running?
+sudo journalctl -u pagewise -f     # watch logs (Ctrl+C to exit)
+sudo systemctl restart pagewise    # restart it
 ```
 
 Deploy code changes later: just re-run the Phase 5 command — it pulls the latest
@@ -130,10 +130,10 @@ and restarts automatically.
 | Symptom | Fix |
 |---|---|
 | Browser page won't load | Port 3000 not opened — redo **Phase 2**. Also check you used `http://` and `:3000`. |
-| `Permissions 0644 ... key rejected` on SSH | Run `chmod 400 md-to-pdf-key.pem`. |
+| `Permissions 0644 ... key rejected` on SSH | Run `chmod 400 pagewise-key.pem`. |
 | `Permission denied (publickey)` | Wrong username — it's `ubuntu@...` for Ubuntu AMIs. |
-| Setup script: `Repository not found` | Token missing/expired or lacks Contents:Read on `md-to-pdf`. Redo **Phase 4**. |
-| Page loads but conversion fails | `sudo journalctl -u md-to-pdf -e` to see the error; usually a missing Chromium lib — re-run the Phase 5 command. |
+| Setup script: `Repository not found` | Check the URL in the Phase 5 command. For a private fork, the token is missing/expired or lacks Contents: Read-only. Redo **Phase 4**. |
+| Page loads but conversion fails | `sudo journalctl -u pagewise -e` to see the error; usually a missing Chromium lib — re-run the Phase 5 command. |
 
 ## Don't forget: stop it when you're done experimenting
 
