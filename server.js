@@ -322,6 +322,10 @@ async function renderPage(req, key) {
     description: escapeHtml(tool.description),
     directory: renderDirectory(),
     guide: renderGuide(tool),
+    // Google Search Console "HTML tag" verification, if configured.
+    verification: process.env.GOOGLE_SITE_VERIFICATION
+      ? `\n<meta name="google-site-verification" content="${escapeHtml(process.env.GOOGLE_SITE_VERIFICATION)}">`
+      : '',
   };
 
   return pageTemplate

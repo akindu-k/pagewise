@@ -69,6 +69,8 @@ and a short how-to. Page copy and metadata live in `lib/shared/tools.mjs`.
 - Set **`SITE_URL`** in production (e.g. `SITE_URL=https://pagewise.example.com`)
   so canonical links, the sitemap and share images use the public address.
   Without it, the request's host is used
+- Set **`GOOGLE_SITE_VERIFICATION`** to the code from Search Console's "HTML tag"
+  verification method to add the `google-site-verification` meta tag
 - Old `/#merge-pdf` style links redirect to the new paths in the browser
 - The share image and Apple touch icon are generated with
   `node scripts/make-images.js`

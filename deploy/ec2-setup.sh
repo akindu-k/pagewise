@@ -25,6 +25,8 @@ PORT="${PORT:-3000}"
 # Public URL for canonical links and the sitemap, e.g. https://pagewise.example.com
 # (optional; without it the request's host is used).
 SITE_URL="${SITE_URL:-}"
+# Google Search Console "HTML tag" verification code (optional).
+GOOGLE_SITE_VERIFICATION="${GOOGLE_SITE_VERIFICATION:-}"
 
 echo "==> Installing base packages, Chromium runtime libraries, Ghostscript and Python"
 sudo apt-get update -y
@@ -94,6 +96,7 @@ WorkingDirectory=${APP_DIR}
 Environment=NODE_ENV=production
 Environment=PORT=${PORT}
 Environment=SITE_URL=${SITE_URL}
+Environment=GOOGLE_SITE_VERIFICATION=${GOOGLE_SITE_VERIFICATION}
 ExecStart=/usr/bin/node server.js
 Restart=always
 RestartSec=3
