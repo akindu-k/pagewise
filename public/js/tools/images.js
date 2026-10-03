@@ -34,7 +34,7 @@ export function initImages(root) {
       button: convertBtn,
       statusEl,
       fallbackName: 'images.pdf',
-      done: 'Done! PDF downloaded.',
+      done: 'Done. Your PDF has downloaded.',
       request() {
         const formData = new FormData();
         list.entries.forEach((entry) => formData.append('files', entry.file));

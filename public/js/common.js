@@ -11,6 +11,10 @@ export function formatBytes(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function icon(name) {
+  return `<svg class="icon" aria-hidden="true"><use href="#i-${name}"/></svg>`;
+}
+
 // Reads a JSON { error } from a failed response, or saves a successful one
 // as a download using the server's Content-Disposition filename.
 export async function downloadResponse(response, fallbackName) {
@@ -35,10 +39,12 @@ export async function downloadResponse(response, fallbackName) {
   return { blob, filename };
 }
 
-// Runs a conversion request with a disabled button and status messages.
-export async function runConversion({ button, statusEl, request, fallbackName, done = 'Done! File downloaded.' }) {
-  setStatus(statusEl, 'Working…');
+// Runs a conversion request with a busy button and status messages.
+export async function runConversion({ button, statusEl, request, fallbackName, done = 'Done. Your file has downloaded.' }) {
+  setStatus(statusEl, 'Working on it…');
   button.disabled = true;
+  button.classList.add('is-busy');
+  button.setAttribute('aria-busy', 'true');
   try {
     const response = await request();
     const result = await downloadResponse(response, fallbackName);
@@ -47,26 +53,76 @@ export async function runConversion({ button, statusEl, request, fallbackName, d
     setStatus(statusEl, err.message || 'Something went wrong.', 'error');
   } finally {
     button.disabled = false;
+    button.classList.remove('is-busy');
+    button.removeAttribute('aria-busy');
   }
 }
 
 // Highlights `zone` while files are dragged over `target` and hands dropped
 // files to onFiles. `shouldIgnore` lets in-page drags (reordering) pass.
 export function bindFileDrop(target, zone, onFiles, shouldIgnore = () => false) {
-  ['dragenter', 'dragover'].forEach((evt) => {
-    target.addEventListener(evt, (e) => {
-      if (shouldIgnore()) return;
-      e.preventDefault();
-      zone.classList.add('dragover');
-    });
+  // dragenter/dragleave also fire for child elements; count them so the
+  // highlight doesn't flicker while moving across the zone.
+  let depth = 0;
+  target.addEventListener('dragenter', (e) => {
+    if (shouldIgnore()) return;
+    e.preventDefault();
+    depth += 1;
+    zone.classList.add('dragover');
   });
-  ['dragleave', 'drop'].forEach((evt) => {
-    target.addEventListener(evt, () => zone.classList.remove('dragover'));
+  target.addEventListener('dragover', (e) => {
+    if (shouldIgnore()) return;
+    e.preventDefault();
+  });
+  target.addEventListener('dragleave', () => {
+    depth = Math.max(0, depth - 1);
+    if (depth === 0) zone.classList.remove('dragover');
   });
   target.addEventListener('drop', (e) => {
+    depth = 0;
+    zone.classList.remove('dragover');
     if (shouldIgnore()) return;
     e.preventDefault();
     if (e.dataTransfer.files.length) onFiles(e.dataTransfer.files);
+  });
+}
+
+// Lets a click anywhere on the dropzone open the file picker, not just on
+// its "Choose file" button.
+function bindDropzoneClick(dropzone, input) {
+  dropzone.addEventListener('click', (e) => {
+    if (e.target.closest('label, input, button')) return;
+    input.click();
+  });
+}
+
+/**
+ * ARIA tabs: arrow keys / Home / End move between tabs; selecting one calls
+ * onSelect(tab). Tab panels (if any) are linked with aria-controls.
+ */
+export function bindTabs(tablist, onSelect) {
+  const tabs = [...tablist.querySelectorAll('[role=tab]')];
+
+  function select(tab, focus = false) {
+    tabs.forEach((t) => {
+      const selected = t === tab;
+      t.setAttribute('aria-selected', String(selected));
+      t.tabIndex = selected ? 0 : -1;
+      const panel = t.getAttribute('aria-controls');
+      if (panel) document.getElementById(panel).hidden = !selected;
+    });
+    if (focus) tab.focus();
+    onSelect(tab);
+  }
+
+  tabs.forEach((tab, i) => {
+    tab.addEventListener('click', () => select(tab));
+    tab.addEventListener('keydown', (e) => {
+      const next = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[e.key];
+      if (next === undefined) return;
+      e.preventDefault();
+      select(tabs[(next + tabs.length) % tabs.length], true);
+    });
   });
 }
 
@@ -116,30 +172,40 @@ export async function renderPdfPage(doc, pageNumber, width = 160) {
 /**
  * Wires up a panel's dropzone + reorderable thumbnail grid.
  *
- * Expects inside `root`: .dropzone, input[type=file], .file-list-wrap,
- * .file-list, .file-count, .file-clear.
+ * Expects inside `root`: .dropzone (containing input[type=file]),
+ * .file-list-wrap, .file-list, .file-count, .file-add, .file-clear,
+ * .file-announcer.
+ *
+ * Reordering works three ways (WCAG 2.5.7): drag and drop, the arrow
+ * buttons on each item, or Alt+←/→ while an item has focus.
  *
  * @param {HTMLElement} root
  * @param {object} opts
  * @param {number} opts.max          most files allowed
  * @param {(f: File) => boolean} opts.accept
  * @param {string} opts.noun         e.g. "image" → "3 images"
- * @param {(entry, figure) => void} opts.preview  fills the thumbnail area
+ * @param {(entry, figure, rerender) => void} opts.preview  fills the thumbnail
  * @param {(entry) => string} [opts.caption]      extra line under the name
  * @param {HTMLElement} opts.statusEl
- * @param {() => void} [opts.onChange]
+ * @param {(entries) => void} [opts.onChange]
  */
 export function createFileList(root, { max, accept, noun, preview, caption, statusEl, onChange = () => {} }) {
   const dropzone = root.querySelector('.dropzone');
-  const input = root.querySelector('input[type=file]');
+  const input = dropzone.querySelector('input[type=file]');
   const listWrap = root.querySelector('.file-list-wrap');
   const list = root.querySelector('.file-list');
   const countEl = root.querySelector('.file-count');
+  const addBtn = root.querySelector('.file-add');
   const clearBtn = root.querySelector('.file-clear');
+  const announcer = root.querySelector('.file-announcer');
 
-  // Each entry: { file, ...whatever preview() stores on it }
+  // Each entry: { file, figure, ...whatever preview() stores on it }
   let entries = [];
   let dragIndex = null;
+  // After a re-render, which control to put keyboard focus back on.
+  let restoreFocus = null;
+
+  const plural = (n) => `${n} ${noun}${n === 1 ? '' : 's'}`;
 
   function add(fileList) {
     const all = Array.from(fileList);
@@ -148,9 +214,9 @@ export function createFileList(root, { max, accept, noun, preview, caption, stat
     incoming.slice(0, room).forEach((file) => entries.push({ file }));
 
     if (incoming.length > room) {
-      setStatus(statusEl, `Only ${max} files allowed; extra files were skipped.`, 'error');
+      setStatus(statusEl, `You can add up to ${max} files. The extra ones were skipped.`, 'error');
     } else if (incoming.length < all.length) {
-      setStatus(statusEl, `${all.length - incoming.length} unsupported file(s) skipped.`, 'error');
+      setStatus(statusEl, `${all.length - incoming.length} file(s) skipped: not a supported type.`, 'error');
     } else {
       setStatus(statusEl, '');
     }
@@ -160,13 +226,18 @@ export function createFileList(root, { max, accept, noun, preview, caption, stat
   function remove(index) {
     const [entry] = entries.splice(index, 1);
     if (entry.url) URL.revokeObjectURL(entry.url);
+    announcer.textContent = `Removed ${entry.file.name}. ${plural(entries.length)} left.`;
+    restoreFocus = entries.length ? { index: Math.min(index, entries.length - 1), selector: '.file-remove' } : null;
     render();
+    if (!entries.length) dropzone.querySelector('input').focus();
   }
 
-  function move(from, to) {
+  function move(from, to, focusSelector) {
     if (to < 0 || to >= entries.length || from === to) return;
     const [entry] = entries.splice(from, 1);
     entries.splice(to, 0, entry);
+    announcer.textContent = `${entry.file.name} moved to position ${to + 1} of ${entries.length}.`;
+    restoreFocus = focusSelector ? { index: to, selector: focusSelector } : null;
     render();
   }
 
@@ -174,7 +245,21 @@ export function createFileList(root, { max, accept, noun, preview, caption, stat
     entries.forEach((entry) => entry.url && URL.revokeObjectURL(entry.url));
     entries = [];
     setStatus(statusEl, '');
+    announcer.textContent = 'All files removed.';
     render();
+    dropzone.querySelector('input').focus();
+  }
+
+  function iconButton(className, iconName, label, onClick, disabled = false) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `icon-btn ${className}`;
+    btn.innerHTML = icon(iconName);
+    btn.setAttribute('aria-label', label);
+    btn.title = label;
+    btn.disabled = disabled;
+    btn.addEventListener('click', onClick);
+    return btn;
   }
 
   function render() {
@@ -182,7 +267,8 @@ export function createFileList(root, { max, accept, noun, preview, caption, stat
       const li = document.createElement('li');
       li.className = 'file-item';
       li.draggable = true;
-      li.title = entry.file.name;
+      li.tabIndex = 0;
+      li.setAttribute('aria-label', `${entry.file.name}, position ${index + 1} of ${entries.length}. Alt plus arrow keys to move.`);
 
       // The preview element is created once per entry and reused across
       // renders, so thumbnails aren't regenerated on every reorder.
@@ -194,18 +280,37 @@ export function createFileList(root, { max, accept, noun, preview, caption, stat
 
       const indexEl = document.createElement('span');
       indexEl.className = 'file-index';
+      indexEl.setAttribute('aria-hidden', 'true');
       indexEl.textContent = index + 1;
 
       const name = document.createElement('span');
       name.className = 'file-name';
       name.textContent = entry.file.name;
 
-      const removeBtn = document.createElement('button');
-      removeBtn.type = 'button';
-      removeBtn.className = 'file-remove';
-      removeBtn.setAttribute('aria-label', `Remove ${entry.file.name}`);
-      removeBtn.textContent = '×';
-      removeBtn.addEventListener('click', () => remove(index));
+      const controls = document.createElement('div');
+      controls.className = 'file-controls';
+      controls.append(
+        iconButton('file-left', 'left', `Move ${entry.file.name} earlier`, () => move(index, index - 1, '.file-left'), index === 0),
+        iconButton('file-right', 'right', `Move ${entry.file.name} later`, () => move(index, index + 1, '.file-right'), index === entries.length - 1),
+        iconButton('file-remove', 'x', `Remove ${entry.file.name}`, () => remove(index)),
+      );
+
+      li.addEventListener('keydown', (e) => {
+        if (e.target !== li) return;
+        if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowUp')) {
+          e.preventDefault();
+          move(index, index - 1, null);
+          restoreFocus = null;
+          list.children[Math.max(index - 1, 0)]?.focus();
+        } else if (e.altKey && (e.key === 'ArrowRight' || e.key === 'ArrowDown')) {
+          e.preventDefault();
+          move(index, index + 1, null);
+          list.children[Math.min(index + 1, entries.length - 1)]?.focus();
+        } else if (e.key === 'Delete' || e.key === 'Backspace') {
+          e.preventDefault();
+          remove(index);
+        }
+      });
 
       li.addEventListener('dragstart', (e) => {
         dragIndex = index;
@@ -226,10 +331,10 @@ export function createFileList(root, { max, accept, noun, preview, caption, stat
         if (dragIndex === null) return;
         e.preventDefault();
         e.stopPropagation();
-        move(dragIndex, index);
+        move(dragIndex, index, null);
       });
 
-      li.append(entry.figure, indexEl, removeBtn, name);
+      li.append(entry.figure, indexEl, name);
       const extra = caption && caption(entry);
       if (extra) {
         const meta = document.createElement('span');
@@ -237,13 +342,21 @@ export function createFileList(root, { max, accept, noun, preview, caption, stat
         meta.textContent = extra;
         li.append(meta);
       }
+      li.append(controls);
       return li;
     }));
+
+    if (restoreFocus) {
+      const target = list.children[restoreFocus.index]?.querySelector(restoreFocus.selector);
+      // A disabled arrow (moved to an end) can't take focus; use the item.
+      (target && !target.disabled ? target : list.children[restoreFocus.index])?.focus();
+      restoreFocus = null;
+    }
 
     const has = entries.length > 0;
     listWrap.hidden = !has;
     dropzone.hidden = has;
-    countEl.textContent = `${entries.length} ${noun}${entries.length === 1 ? '' : 's'}`;
+    countEl.textContent = plural(entries.length);
     onChange(entries);
   }
 
@@ -251,7 +364,9 @@ export function createFileList(root, { max, accept, noun, preview, caption, stat
     add(input.files);
     input.value = '';
   });
+  addBtn.addEventListener('click', () => input.click());
   clearBtn.addEventListener('click', clear);
+  bindDropzoneClick(dropzone, input);
   bindFileDrop(root, dropzone, add, () => dragIndex !== null);
 
   render();
@@ -281,7 +396,7 @@ export function pdfPreview(entry, figure, rerender) {
     }, (err) => {
       entry.locked = !!err.locked;
       entry.invalid = !err.locked;
-      figure.textContent = err.locked ? 'Locked' : 'Unreadable';
+      figure.textContent = err.locked ? 'Password-protected' : 'Unreadable';
       figure.classList.add('preview-error');
     })
     .finally(() => {
@@ -295,8 +410,8 @@ export function pdfPreview(entry, figure, rerender) {
 export const isPdfFile = (f) => f.type === 'application/pdf' || /\.pdf$/i.test(f.name);
 
 /**
- * Wires up a one-file dropzone. Expects inside `root`: .dropzone,
- * input[type=file], .single-file, .single-file-name, .single-file-clear.
+ * Wires up a one-file dropzone. Expects inside `root`: .dropzone (containing
+ * input[type=file]), .single-file, .single-file-name, .single-file-clear.
  *
  * @param {HTMLElement} root
  * @param {object} opts
@@ -307,7 +422,7 @@ export const isPdfFile = (f) => f.type === 'application/pdf' || /\.pdf$/i.test(f
  */
 export function createSingleFilePicker(root, { accept, rejectMessage, statusEl, onChange }) {
   const dropzone = root.querySelector('.dropzone');
-  const input = root.querySelector('input[type=file]');
+  const input = dropzone.querySelector('input[type=file]');
   const bar = root.querySelector('.single-file');
   const nameEl = root.querySelector('.single-file-name');
   const clearBtn = root.querySelector('.single-file-clear');
@@ -330,7 +445,11 @@ export function createSingleFilePicker(root, { accept, rejectMessage, statusEl, 
   }
 
   input.addEventListener('change', () => input.files.length && pick(input.files));
-  clearBtn.addEventListener('click', () => set(null));
+  clearBtn.addEventListener('click', () => {
+    set(null);
+    input.focus();
+  });
+  bindDropzoneClick(dropzone, input);
   bindFileDrop(root, dropzone, pick);
 
   return {

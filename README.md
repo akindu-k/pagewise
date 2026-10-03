@@ -24,6 +24,7 @@ A small self-hosted PDF toolkit. Pick a tool from the menu at the top of the pag
 - **pdf2docx** (Python, in `.venv`) — PDF to Word
 - **multer** — file upload handling
 - Vanilla HTML/CSS/JS frontend (ES modules, one per tool in `public/js/tools/`)
+- **IBM Plex Sans / Mono** (`@fontsource`) — self-hosted at `/vendor/fonts`, so pages make no third-party requests
 
 ## Run locally
 

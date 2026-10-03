@@ -190,6 +190,10 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/vendor/pdfjs', express.static(path.join(path.dirname(require.resolve('pdfjs-dist/package.json')), 'build')));
+// Self-hosted IBM Plex fonts (no third-party font requests).
+for (const pkg of ['@fontsource/ibm-plex-sans', '@fontsource/ibm-plex-mono']) {
+  app.use('/vendor/fonts', express.static(path.join(path.dirname(require.resolve(`${pkg}/package.json`)), 'files'), { maxAge: '30d' }));
+}
 
 app.use('/shared', express.static(path.join(__dirname, 'lib', 'shared')));
 
