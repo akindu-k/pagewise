@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="light dark">
-<title>PDF Converter</title>
+<title>Pagewise: free PDF tools</title>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preload" href="/vendor/fonts/ibm-plex-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/vendor/fonts/ibm-plex-sans-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
@@ -29,9 +29,9 @@
 
   <div class="app">
     <aside class="sidebar">
-      <a class="brand" href="#md-to-pdf">
+      <a class="brand" href="#home">
         <span class="brand-mark" aria-hidden="true"></span>
-        <span>PDF Converter</span>
+        <span>Pagewise</span>
       </a>
 
       <nav class="tool-nav" aria-label="Tools">
@@ -60,12 +60,33 @@
 
     <main class="workspace" id="workspace" tabindex="-1">
       <header class="tool-header">
-        <h1 id="tool-title" tabindex="-1">Markdown to PDF</h1>
+        <h1 id="tool-title" tabindex="-1">Convert, combine and shrink PDFs</h1>
         <p id="tool-description"></p>
       </header>
 
+      <!-- Home -->
+      <section class="panel" data-tool-panel="home" aria-labelledby="tool-title">
+        <div class="dropzone quick-drop">
+          <svg class="dropzone-icon" aria-hidden="true"><use href="#i-upload"/></svg>
+          <p class="dropzone-title">Not sure which tool? Drop a file here</p>
+          <label class="btn btn-secondary">Choose files<input type="file" class="visually-hidden" accept="application/pdf,.pdf,image/*,.md,.markdown" multiple></label>
+          <p class="dropzone-hint">PDFs, images or Markdown. You'll see the tools that fit.</p>
+        </div>
+        <div class="quick-result" hidden>
+          <div class="quick-result-header">
+            <p class="quick-files"></p>
+            <button type="button" class="link-btn quick-reset">Choose a different file</button>
+          </div>
+          <p class="quick-prompt">What do you want to do?</p>
+          <ul class="quick-actions"></ul>
+        </div>
+        <p class="status" role="status"></p>
+
+        <div class="directory"></div>
+      </section>
+
       <!-- Markdown to PDF -->
-      <section class="panel" data-tool-panel="md" aria-labelledby="tool-title">
+      <section class="panel" data-tool-panel="md" aria-labelledby="tool-title" hidden>
         <div class="segmented" role="tablist" aria-label="Markdown source">
           <button class="segment" role="tab" type="button" id="md-tab-upload" data-tab="upload" aria-controls="md-panel-upload" aria-selected="true">Upload file</button>
           <button class="segment" role="tab" type="button" id="md-tab-paste" data-tab="paste" aria-controls="md-panel-paste" aria-selected="false" tabindex="-1">Paste text</button>

@@ -217,4 +217,7 @@ export function initSplit(root) {
     });
     update();
   });
+
+  // Files handed over from the home page.
+  return { receive: (files) => picker.pick(files) };
 }

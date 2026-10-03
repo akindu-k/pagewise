@@ -1,6 +1,6 @@
-# md-to-pdf
+# Pagewise
 
-A small self-hosted PDF toolkit. Pick a tool from the menu at the top of the page:
+A small self-hosted PDF toolkit. The home page (`/`) lists every tool and can suggest one for a file you drop on it:
 
 | Tool | URL | What it does |
 | --- | --- | --- |

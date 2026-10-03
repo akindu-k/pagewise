@@ -50,4 +50,12 @@ export function initMarkdown(root) {
     });
     updateConvertState();
   });
+
+  // Files handed over from the home page.
+  return {
+    receive(files) {
+      root.querySelector('[data-tab=upload]').click();
+      picker.pick(files);
+    },
+  };
 }
