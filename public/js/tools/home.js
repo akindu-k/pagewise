@@ -32,7 +32,7 @@ function svgIcon(name) {
 
 /**
  * @param {HTMLElement} root  the home panel
- * @param {object} tools      TOOLS config from main.js (title, hash, group, icon, summary, accepts)
+ * @param {object} tools      tool catalogue (lib/shared/tools.mjs)
  * @param {(key: string, files: File[]) => void} openTool
  */
 export function initHome(root, tools, openTool) {
@@ -43,7 +43,6 @@ export function initHome(root, tools, openTool) {
   const actionsEl = root.querySelector('.quick-actions');
   const resetBtn = root.querySelector('.quick-reset');
   const statusEl = root.querySelector('.status');
-  const directory = root.querySelector('.directory');
 
   function reset() {
     result.hidden = true;
@@ -96,34 +95,4 @@ export function initHome(root, tools, openTool) {
   });
   bindDropzoneClick(dropzone, input);
   bindFileDrop(root, dropzone, handle);
-
-  // Tool directory, grouped like the sidebar.
-  const groups = new Map();
-  Object.entries(tools).forEach(([key, tool]) => {
-    if (!tool.group) return;
-    if (!groups.has(tool.group)) groups.set(tool.group, []);
-    groups.get(tool.group).push([key, tool]);
-  });
-
-  directory.replaceChildren(...[...groups].map(([group, entries]) => {
-    const section = document.createElement('section');
-    section.className = 'directory-group';
-    const heading = document.createElement('h2');
-    heading.textContent = group;
-    const list = document.createElement('ul');
-    list.append(...entries.map(([, tool]) => {
-      const li = document.createElement('li');
-      const a = document.createElement('a');
-      a.className = 'directory-item';
-      a.href = tool.hash;
-      a.innerHTML = `${svgIcon(tool.icon)}<span><span class="directory-name"></span><span class="directory-summary"></span><span class="directory-accepts"></span></span>`;
-      a.querySelector('.directory-name').textContent = tool.title;
-      a.querySelector('.directory-summary').textContent = tool.summary;
-      a.querySelector('.directory-accepts').textContent = tool.accepts;
-      li.append(a);
-      return li;
-    }));
-    section.append(heading, list);
-    return section;
-  }));
 }

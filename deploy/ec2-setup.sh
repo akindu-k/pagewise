@@ -22,6 +22,9 @@ APP_USER="${SUDO_USER:-ubuntu}"
 APP_HOME="/home/${APP_USER}"
 APP_DIR="${APP_HOME}/${REPO_NAME}"
 PORT="${PORT:-3000}"
+# Public URL for canonical links and the sitemap, e.g. https://pagewise.example.com
+# (optional; without it the request's host is used).
+SITE_URL="${SITE_URL:-}"
 
 echo "==> Installing base packages, Chromium runtime libraries, Ghostscript and Python"
 sudo apt-get update -y
@@ -90,6 +93,7 @@ User=${APP_USER}
 WorkingDirectory=${APP_DIR}
 Environment=NODE_ENV=production
 Environment=PORT=${PORT}
+Environment=SITE_URL=${SITE_URL}
 ExecStart=/usr/bin/node server.js
 Restart=always
 RestartSec=3

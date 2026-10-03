@@ -4,11 +4,27 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="light dark">
-<title>Pagewise: free PDF tools</title>
-<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<title>{{pageTitle}}</title>
+<meta name="description" content="{{metaDescription}}">
+<link rel="canonical" href="{{canonical}}">
+<meta name="theme-color" content="#f4f2ee" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141312" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Pagewise">
+<meta property="og:title" content="{{pageTitle}}">
+<meta property="og:description" content="{{metaDescription}}">
+<meta property="og:url" content="{{canonical}}">
+<meta property="og:image" content="{{origin}}/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Pagewise: free online PDF tools">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<script type="application/ld+json">{{jsonLd}}</script>
 <link rel="preload" href="/vendor/fonts/ibm-plex-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/vendor/fonts/ibm-plex-sans-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="/style.css">
 </head>
 <body>
   <!-- Icon sprite: referenced below with <use href="#i-…">. -->
@@ -29,7 +45,7 @@
 
   <div class="app">
     <aside class="sidebar">
-      <a class="brand" href="#home">
+      <a class="brand" href="/">
         <span class="brand-mark" aria-hidden="true"></span>
         <span>Pagewise</span>
       </a>
@@ -37,21 +53,21 @@
       <nav class="tool-nav" aria-label="Tools">
         <p class="nav-group" id="g-create">Create PDF</p>
         <ul aria-labelledby="g-create">
-          <li><a class="tool-link" href="#md-to-pdf" data-tool="md"><svg class="icon"><use href="#i-md"/></svg><span>Markdown to PDF</span></a></li>
-          <li><a class="tool-link" href="#jpg-to-pdf" data-tool="jpg"><svg class="icon"><use href="#i-image"/></svg><span>JPG to PDF</span></a></li>
+          <li><a class="tool-link" href="/markdown-to-pdf" data-tool="md"><svg class="icon"><use href="#i-md"/></svg><span>Markdown to PDF</span></a></li>
+          <li><a class="tool-link" href="/jpg-to-pdf" data-tool="jpg"><svg class="icon"><use href="#i-image"/></svg><span>JPG to PDF</span></a></li>
         </ul>
         <p class="nav-group" id="g-organize">Organize</p>
         <ul aria-labelledby="g-organize">
-          <li><a class="tool-link" href="#merge-pdf" data-tool="merge"><svg class="icon"><use href="#i-merge"/></svg><span>Merge PDF</span></a></li>
-          <li><a class="tool-link" href="#split-pdf" data-tool="split"><svg class="icon"><use href="#i-split"/></svg><span>Split PDF</span></a></li>
+          <li><a class="tool-link" href="/merge-pdf" data-tool="merge"><svg class="icon"><use href="#i-merge"/></svg><span>Merge PDF</span></a></li>
+          <li><a class="tool-link" href="/split-pdf" data-tool="split"><svg class="icon"><use href="#i-split"/></svg><span>Split PDF</span></a></li>
         </ul>
         <p class="nav-group" id="g-optimize">Optimize</p>
         <ul aria-labelledby="g-optimize">
-          <li><a class="tool-link" href="#compress-pdf" data-tool="compress"><svg class="icon"><use href="#i-compress"/></svg><span>Compress PDF</span></a></li>
+          <li><a class="tool-link" href="/compress-pdf" data-tool="compress"><svg class="icon"><use href="#i-compress"/></svg><span>Compress PDF</span></a></li>
         </ul>
         <p class="nav-group" id="g-from">Convert from PDF</p>
         <ul aria-labelledby="g-from">
-          <li><a class="tool-link" href="#pdf-to-word" data-tool="word"><svg class="icon"><use href="#i-word"/></svg><span>PDF to Word</span></a></li>
+          <li><a class="tool-link" href="/pdf-to-word" data-tool="word"><svg class="icon"><use href="#i-word"/></svg><span>PDF to Word</span></a></li>
         </ul>
       </nav>
 
@@ -60,12 +76,12 @@
 
     <main class="workspace" id="workspace" tabindex="-1">
       <header class="tool-header">
-        <h1 id="tool-title" tabindex="-1">Convert, combine and shrink PDFs</h1>
-        <p id="tool-description"></p>
+        <h1 id="tool-title" tabindex="-1">{{title}}</h1>
+        <p id="tool-description">{{description}}</p>
       </header>
 
       <!-- Home -->
-      <section class="panel" data-tool-panel="home" aria-labelledby="tool-title">
+      <section class="panel" data-tool-panel="home" aria-labelledby="tool-title" hidden>
         <div class="dropzone quick-drop">
           <svg class="dropzone-icon" aria-hidden="true"><use href="#i-upload"/></svg>
           <p class="dropzone-title">Not sure which tool? Drop a file here</p>
@@ -82,7 +98,7 @@
         </div>
         <p class="status" role="status"></p>
 
-        <div class="directory"></div>
+        <div class="directory">{{directory}}</div>
       </section>
 
       <!-- Markdown to PDF -->
@@ -302,9 +318,10 @@
           <p class="status" role="status"></p>
         </div>
       </section>
+      <section class="tool-guide">{{guide}}</section>
     </main>
   </div>
 
-  <script type="module" src="js/main.js"></script>
+  <script type="module" src="/js/main.js"></script>
 </body>
 </html>
