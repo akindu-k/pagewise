@@ -15,6 +15,7 @@
     "express": "^5.2.1",
     "github-markdown-css": "^5.9.0",
     "highlight.js": "^11.11.1",
+    "jszip": "^3.10.2",
     "markdown-it": "^14.3.0",
     "multer": "^2.2.0",
     "pdf-lib": "^1.17.1",

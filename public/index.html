@@ -19,6 +19,7 @@
         <a class="tool-link" href="#md-to-pdf" data-tool="md">Markdown to PDF</a>
         <a class="tool-link" href="#jpg-to-pdf" data-tool="jpg">JPG to PDF</a>
         <a class="tool-link" href="#merge-pdf" data-tool="merge">Merge PDF</a>
+        <a class="tool-link" href="#split-pdf" data-tool="split">Split PDF</a>
       </nav>
     </header>
 
@@ -136,6 +137,59 @@
         <button class="convert-btn" type="button" disabled>Merge PDF</button>
         <span class="status" aria-live="polite"></span>
         <span class="hint merge-summary"></span>
+      </div>
+    </main>
+
+    <main class="card" data-tool-panel="split" hidden>
+      <label class="dropzone" for="split-input">
+        <input type="file" id="split-input" accept="application/pdf,.pdf" hidden>
+        <div class="dropzone-content">
+          <svg class="dropzone-icon" viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M12 16V4m0 0-4 4m4-4 4 4" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <p><strong>Drop a PDF here</strong> or click to browse</p>
+          <p class="hint">One PDF up to 100MB</p>
+        </div>
+      </label>
+      <div class="file-selected split-file" hidden>
+        <span class="split-file-name"></span>
+        <button type="button" class="link-btn split-clear">Remove</button>
+      </div>
+
+      <div class="split-body" hidden>
+        <div class="tabs split-modes">
+          <button class="tab active" type="button" data-mode="ranges">Custom ranges</button>
+          <button class="tab" type="button" data-mode="fixed">Fixed ranges</button>
+          <button class="tab" type="button" data-mode="extract">Extract pages</button>
+        </div>
+
+        <div class="split-option" data-for="ranges">
+          <label class="field">Ranges &mdash; each becomes its own PDF
+            <input type="text" id="split-ranges" placeholder="e.g. 1-3, 4-6, 9-" autocomplete="off">
+          </label>
+          <label class="check"><input type="checkbox" id="split-ranges-merge"> Merge all ranges into one PDF</label>
+        </div>
+        <div class="split-option" data-for="fixed" hidden>
+          <label class="field">Split every
+            <span class="inline-input"><input type="number" id="split-every" min="1" value="1"> pages</span>
+          </label>
+        </div>
+        <div class="split-option" data-for="extract" hidden>
+          <label class="check"><input type="checkbox" id="split-all" checked> Extract every page into its own PDF</label>
+          <label class="field">Pages to extract &mdash; or click pages below
+            <input type="text" id="split-pages" placeholder="e.g. 1, 3, 5-8" autocomplete="off" disabled>
+          </label>
+          <label class="check"><input type="checkbox" id="split-extract-merge"> Merge extracted pages into one PDF</label>
+        </div>
+
+        <p class="split-summary"></p>
+        <ol class="page-grid"></ol>
+      </div>
+
+      <div class="actions">
+        <button class="convert-btn" type="button" disabled>Split PDF</button>
+        <span class="status" aria-live="polite"></span>
       </div>
     </main>
 
