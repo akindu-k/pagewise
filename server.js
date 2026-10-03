@@ -5,25 +5,73 @@ const multer = require('multer');
 const MarkdownIt = require('markdown-it');
 const hljs = require('highlight.js');
 const puppeteer = require('puppeteer');
-const { imagesToPdf, UserError } = require('./lib/images-to-pdf');
+const { UserError } = require('./lib/errors');
+const { imagesToPdf } = require('./lib/images-to-pdf');
+const { mergePdfs } = require('./lib/pdf-tools');
 
 const PORT = process.env.PORT || 3000;
 
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-});
+const MB = 1024 * 1024;
 
-const MAX_IMAGES = 30;
-const imageUpload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 15 * 1024 * 1024, files: MAX_IMAGES }, // 15MB per image
-});
+// Upload middleware for one form field. Limit errors (too large, too many
+// files) are reported as JSON 400s with a message the UI can show as-is.
+function uploadFiles(field, { maxFiles, maxSizeMB }) {
+  const parse = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: maxSizeMB * MB, files: maxFiles },
+  }).array(field, maxFiles);
 
-// Header-safe download name; non-ASCII characters would make setHeader throw.
-function attachmentHeader(baseName) {
+  return (req, res, next) => {
+    parse(req, res, (err) => {
+      if (!err) return next();
+      if (!(err instanceof multer.MulterError)) return next(err);
+      const messages = {
+        LIMIT_FILE_SIZE: `File is too large (max ${maxSizeMB}MB).`,
+        LIMIT_FILE_COUNT: `Too many files (max ${maxFiles}).`,
+        LIMIT_UNEXPECTED_FILE: maxFiles === 1 ? 'Upload one file at a time.' : `Too many files (max ${maxFiles}).`,
+      };
+      res.status(400).json({ error: messages[err.code] || err.message });
+    });
+  };
+}
+
+// Wraps a route: UserErrors become 400s, anything else a logged 500.
+function route(handler) {
+  return async (req, res) => {
+    try {
+      await handler(req, res);
+    } catch (err) {
+      if (err instanceof UserError) {
+        return res.status(400).json({ error: err.message });
+      }
+      console.error(`${req.path} failed:`, err);
+      res.status(500).json({ error: `Conversion failed: ${err.message}` });
+    }
+  };
+}
+
+function baseNameOf(filename) {
+  return path.basename(filename, path.extname(filename));
+}
+
+// Sends bytes as a download. The name is made header-safe, since non-ASCII
+// characters would make setHeader throw.
+function sendDownload(res, bytes, { baseName, ext, type }) {
   const safe = baseName.replace(/[^\w.\- ]+/g, '_').trim() || 'document';
-  return `attachment; filename="${safe}.pdf"`;
+  res.setHeader('Content-Type', type);
+  res.setHeader('Content-Disposition', `attachment; filename="${safe}.${ext}"`);
+  res.send(Buffer.from(bytes));
+}
+
+function sendPdf(res, bytes, baseName) {
+  sendDownload(res, bytes, { baseName, ext: 'pdf', type: 'application/pdf' });
+}
+
+function requireFiles(req, what) {
+  if (!req.files || req.files.length === 0) {
+    throw new UserError(`No ${what} provided. Send one or more "files" uploads.`);
+  }
+  return req.files.map((f) => ({ buffer: f.buffer, name: f.originalname }));
 }
 
 const md = new MarkdownIt({
@@ -138,75 +186,44 @@ const app = express();
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.post('/api/convert', upload.single('file'), async (req, res) => {
-  try {
-    let markdownSource;
-    let baseName = 'document';
+app.use('/vendor/pdfjs', express.static(path.join(path.dirname(require.resolve('pdfjs-dist/package.json')), 'build')));
 
-    if (req.file) {
-      markdownSource = req.file.buffer.toString('utf8');
-      baseName = path.basename(req.file.originalname, path.extname(req.file.originalname));
-    } else if (req.body && typeof req.body.markdown === 'string') {
-      markdownSource = req.body.markdown;
-      if (req.body.filename) {
-        baseName = path.basename(req.body.filename, path.extname(req.body.filename));
-      }
-    } else {
-      return res.status(400).json({ error: 'No markdown provided. Send a "file" upload or "markdown" text field.' });
-    }
+app.post('/api/convert', uploadFiles('file', { maxFiles: 1, maxSizeMB: 10 }), route(async (req, res) => {
+  let markdownSource;
+  let baseName = 'document';
 
-    if (!markdownSource.trim()) {
-      return res.status(400).json({ error: 'Markdown content is empty.' });
-    }
-
-    const html = renderHtmlDocument(markdownSource, baseName);
-    const pdfBuffer = await htmlToPdfBuffer(html);
-
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', attachmentHeader(baseName));
-    res.send(pdfBuffer);
-  } catch (err) {
-    console.error('Conversion failed:', err);
-    res.status(500).json({ error: `Conversion failed: ${err.message}` });
+  const file = req.files && req.files[0];
+  if (file) {
+    markdownSource = file.buffer.toString('utf8');
+    baseName = baseNameOf(file.originalname);
+  } else if (req.body && typeof req.body.markdown === 'string') {
+    markdownSource = req.body.markdown;
+    if (req.body.filename) baseName = baseNameOf(req.body.filename);
+  } else {
+    throw new UserError('No markdown provided. Send a "file" upload or "markdown" text field.');
   }
-});
 
-app.post('/api/images-to-pdf', imageUpload.array('files', MAX_IMAGES), async (req, res) => {
-  try {
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ error: 'No images provided. Send one or more "files" uploads.' });
-    }
-
-    const files = req.files.map((f) => ({ buffer: f.buffer, name: f.originalname }));
-    const pdfBytes = await imagesToPdf(files, req.body);
-
-    const first = req.files[0].originalname;
-    const baseName = req.files.length === 1 ? path.basename(first, path.extname(first)) : 'images';
-
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', attachmentHeader(baseName));
-    res.send(Buffer.from(pdfBytes));
-  } catch (err) {
-    if (err instanceof UserError) {
-      return res.status(400).json({ error: err.message });
-    }
-    console.error('Image conversion failed:', err);
-    res.status(500).json({ error: `Conversion failed: ${err.message}` });
+  if (!markdownSource.trim()) {
+    throw new UserError('Markdown content is empty.');
   }
-});
 
-// Turn upload-limit errors (too large, too many files) into JSON the UI can show.
-app.use((err, req, res, next) => {
-  if (err instanceof multer.MulterError) {
-    const messages = {
-      LIMIT_FILE_SIZE: 'File is too large.',
-      LIMIT_FILE_COUNT: `Too many files (max ${MAX_IMAGES}).`,
-      LIMIT_UNEXPECTED_FILE: `Too many files (max ${MAX_IMAGES}).`,
-    };
-    return res.status(400).json({ error: messages[err.code] || err.message });
+  const html = renderHtmlDocument(markdownSource, baseName);
+  sendPdf(res, await htmlToPdfBuffer(html), baseName);
+}));
+
+app.post('/api/images-to-pdf', uploadFiles('files', { maxFiles: 30, maxSizeMB: 15 }), route(async (req, res) => {
+  const files = requireFiles(req, 'images');
+  const pdfBytes = await imagesToPdf(files, req.body);
+  sendPdf(res, pdfBytes, files.length === 1 ? baseNameOf(files[0].name) : 'images');
+}));
+
+app.post('/api/merge', uploadFiles('files', { maxFiles: 20, maxSizeMB: 50 }), route(async (req, res) => {
+  const files = requireFiles(req, 'PDFs');
+  if (files.length < 2) {
+    throw new UserError('Add at least two PDFs to merge.');
   }
-  next(err);
-});
+  sendPdf(res, await mergePdfs(files), 'merged');
+}));
 
 app.listen(PORT, () => {
   console.log(`md-to-pdf server running at http://localhost:${PORT}`);

@@ -1,13 +1,12 @@
 # md-to-pdf
 
-A small PDF converter with two modes, picked from the switcher at the top of the page:
+A small self-hosted PDF toolkit. Pick a tool from the menu at the top of the page:
 
-- **Markdown → PDF** (`/#md-to-pdf`) — upload a `.md` file (or paste Markdown) and
-  download a polished PDF rendered with GitHub styling, syntax highlighting,
-  tables, and proper page margins.
-- **JPG → PDF** (`/#jpg-to-pdf`) — upload up to 30 images (JPG, PNG, WebP, GIF,
-  TIFF, AVIF), drag to reorder, choose page size / orientation / margin, and
-  download them as a single PDF.
+| Tool | URL | What it does |
+| --- | --- | --- |
+| Markdown → PDF | `/#md-to-pdf` | Upload a `.md` file (or paste Markdown) and get a PDF with GitHub styling, syntax highlighting and tables. |
+| JPG → PDF | `/#jpg-to-pdf` | Up to 30 images (JPG, PNG, WebP, GIF, TIFF, AVIF), drag to reorder, choose page size / orientation / margin. |
+| Merge PDF | `/#merge-pdf` | Up to 20 PDFs with page previews, drag to reorder, combined into one PDF. |
 
 ## Stack
 
@@ -17,8 +16,9 @@ A small PDF converter with two modes, picked from the switcher at the top of the
 - **Puppeteer** — headless Chromium prints the HTML to a real A4 PDF
 - **pdf-lib** — builds the image PDF (JPEGs are embedded as-is, no re-encoding)
 - **sharp** — reads image metadata, fixes EXIF rotation, converts WebP/GIF/TIFF/AVIF
+- **pdf.js** (`pdfjs-dist`) — page thumbnails in the browser
 - **multer** — file upload handling
-- Vanilla HTML/CSS/JS frontend (drag-and-drop upload + paste tab)
+- Vanilla HTML/CSS/JS frontend (ES modules, one per tool in `public/js/tools/`)
 
 ## Run locally
 
@@ -63,3 +63,8 @@ curl -F files=@a.jpg -F files=@b.png -F pageSize=a4 -F margin=small \
 ```
 
 Responds with `application/pdf`; invalid or unsupported images return a `400` with a JSON `error`.
+
+### `POST /api/merge` — merge PDFs
+
+`multipart/form-data` with two or more `files` (PDFs, in merge order; max 20, 50 MB each).
+Responds with `merged.pdf`. Password-protected or invalid PDFs return a `400` naming the file.
