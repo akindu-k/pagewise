@@ -2,7 +2,7 @@
 #
 # One-shot setup for running md-to-pdf on a fresh Ubuntu 24.04 EC2 instance.
 # Installs Node 20, the Chromium runtime libraries Puppeteer needs, Ghostscript
-# (Compress PDF), clones the
+# (Compress PDF), Python + pdf2docx (PDF to Word), clones the
 # repo, installs dependencies, and registers an always-on systemd service.
 #
 # Usage (on the instance):
@@ -23,11 +23,12 @@ APP_HOME="/home/${APP_USER}"
 APP_DIR="${APP_HOME}/${REPO_NAME}"
 PORT="${PORT:-3000}"
 
-echo "==> Installing base packages, Chromium runtime libraries and Ghostscript"
+echo "==> Installing base packages, Chromium runtime libraries, Ghostscript and Python"
 sudo apt-get update -y
 sudo apt-get install -y --no-install-recommends \
   ca-certificates curl git \
   ghostscript \
+  python3 python3-venv \
   fonts-liberation \
   libasound2t64 \
   libatk-bridge2.0-0 \
@@ -73,6 +74,9 @@ fi
 
 echo "==> Installing dependencies (downloads matching Chromium)"
 sudo -u "${APP_USER}" bash -c "cd '${APP_DIR}' && npm ci --omit=dev"
+
+echo "==> Installing pdf2docx (PDF to Word) into ${APP_DIR}/.venv"
+sudo -u "${APP_USER}" bash -c "cd '${APP_DIR}' && npm run setup:python"
 
 echo "==> Installing systemd service"
 sudo tee /etc/systemd/system/md-to-pdf.service >/dev/null <<UNIT

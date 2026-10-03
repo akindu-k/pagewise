@@ -21,6 +21,7 @@
         <a class="tool-link" href="#merge-pdf" data-tool="merge">Merge PDF</a>
         <a class="tool-link" href="#split-pdf" data-tool="split">Split PDF</a>
         <a class="tool-link" href="#compress-pdf" data-tool="compress">Compress PDF</a>
+        <a class="tool-link" href="#pdf-to-word" data-tool="word">PDF to Word</a>
       </nav>
     </header>
 
@@ -232,6 +233,31 @@
 
       <div class="actions">
         <button class="convert-btn" type="button" disabled>Compress PDF</button>
+        <span class="status" aria-live="polite"></span>
+      </div>
+    </main>
+
+    <main class="card" data-tool-panel="word" hidden>
+      <label class="dropzone" for="word-input">
+        <input type="file" id="word-input" accept="application/pdf,.pdf" hidden>
+        <div class="dropzone-content">
+          <svg class="dropzone-icon" viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M12 16V4m0 0-4 4m4-4 4 4" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <p><strong>Drop a PDF here</strong> or click to browse</p>
+          <p class="hint">One PDF up to 50MB &mdash; converted to an editable .docx</p>
+        </div>
+      </label>
+      <div class="file-selected single-file" hidden>
+        <span class="single-file-name"></span>
+        <button type="button" class="link-btn single-file-clear">Remove</button>
+      </div>
+
+      <p class="hint tool-note">Works best with PDFs that contain real text. Scanned pages come through as images.</p>
+
+      <div class="actions">
+        <button class="convert-btn" type="button" disabled>Convert to Word</button>
         <span class="status" aria-live="polite"></span>
       </div>
     </main>
