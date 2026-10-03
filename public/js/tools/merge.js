@@ -50,4 +50,7 @@ export function initMerge(root) {
     });
     list.refresh();
   });
+
+  // Files handed over from the home page.
+  return { receive: (files) => list.add(files) };
 }

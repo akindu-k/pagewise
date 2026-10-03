@@ -27,4 +27,7 @@ export function initWord(root) {
       },
     });
   });
+
+  // Files handed over from the home page.
+  return { receive: (files) => picker.pick(files) };
 }

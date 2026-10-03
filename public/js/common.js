@@ -89,7 +89,7 @@ export function bindFileDrop(target, zone, onFiles, shouldIgnore = () => false) 
 
 // Lets a click anywhere on the dropzone open the file picker, not just on
 // its "Choose file" button.
-function bindDropzoneClick(dropzone, input) {
+export function bindDropzoneClick(dropzone, input) {
   dropzone.addEventListener('click', (e) => {
     if (e.target.closest('label, input, button')) return;
     input.click();
@@ -373,6 +373,7 @@ export function createFileList(root, { max, accept, noun, preview, caption, stat
   return {
     get entries() { return entries; },
     refresh: render,
+    add,
   };
 }
 
@@ -455,5 +456,6 @@ export function createSingleFilePicker(root, { accept, rejectMessage, statusEl, 
   return {
     get file() { return file; },
     setLabel(text) { nameEl.textContent = text; },
+    pick,
   };
 }
