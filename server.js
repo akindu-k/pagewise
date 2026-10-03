@@ -5,6 +5,7 @@ const multer = require('multer');
 const MarkdownIt = require('markdown-it');
 const hljs = require('highlight.js');
 const puppeteer = require('puppeteer');
+const { imagesToPdf, UserError } = require('./lib/images-to-pdf');
 
 const PORT = process.env.PORT || 3000;
 
@@ -12,6 +13,18 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
 });
+
+const MAX_IMAGES = 30;
+const imageUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 15 * 1024 * 1024, files: MAX_IMAGES }, // 15MB per image
+});
+
+// Header-safe download name; non-ASCII characters would make setHeader throw.
+function attachmentHeader(baseName) {
+  const safe = baseName.replace(/[^\w.\- ]+/g, '_').trim() || 'document';
+  return `attachment; filename="${safe}.pdf"`;
+}
 
 const md = new MarkdownIt({
   html: true,
@@ -150,12 +163,49 @@ app.post('/api/convert', upload.single('file'), async (req, res) => {
     const pdfBuffer = await htmlToPdfBuffer(html);
 
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${baseName}.pdf"`);
+    res.setHeader('Content-Disposition', attachmentHeader(baseName));
     res.send(pdfBuffer);
   } catch (err) {
     console.error('Conversion failed:', err);
     res.status(500).json({ error: `Conversion failed: ${err.message}` });
   }
+});
+
+app.post('/api/images-to-pdf', imageUpload.array('files', MAX_IMAGES), async (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'No images provided. Send one or more "files" uploads.' });
+    }
+
+    const files = req.files.map((f) => ({ buffer: f.buffer, name: f.originalname }));
+    const pdfBytes = await imagesToPdf(files, req.body);
+
+    const first = req.files[0].originalname;
+    const baseName = req.files.length === 1 ? path.basename(first, path.extname(first)) : 'images';
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', attachmentHeader(baseName));
+    res.send(Buffer.from(pdfBytes));
+  } catch (err) {
+    if (err instanceof UserError) {
+      return res.status(400).json({ error: err.message });
+    }
+    console.error('Image conversion failed:', err);
+    res.status(500).json({ error: `Conversion failed: ${err.message}` });
+  }
+});
+
+// Turn upload-limit errors (too large, too many files) into JSON the UI can show.
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    const messages = {
+      LIMIT_FILE_SIZE: 'File is too large.',
+      LIMIT_FILE_COUNT: `Too many files (max ${MAX_IMAGES}).`,
+      LIMIT_UNEXPECTED_FILE: `Too many files (max ${MAX_IMAGES}).`,
+    };
+    return res.status(400).json({ error: messages[err.code] || err.message });
+  }
+  next(err);
 });
 
 app.listen(PORT, () => {
