@@ -1,6 +1,7 @@
 import { initMarkdown } from './tools/markdown.js';
 import { initImages } from './tools/images.js';
 import { initMerge } from './tools/merge.js';
+import { initSplit } from './tools/split.js';
 
 // Each tool owns a <main data-tool="..."> panel and a #hash route.
 const TOOLS = {
@@ -24,6 +25,13 @@ const TOOLS = {
     title: 'Merge PDF',
     tagline: 'Combine several PDFs into one, in the order you choose.',
     init: initMerge,
+  },
+  split: {
+    hash: '#split-pdf',
+    logo: ['PDF', 'PDFs'],
+    title: 'Split PDF',
+    tagline: 'Split a PDF into ranges, every N pages, or pull out just the pages you need.',
+    init: initSplit,
   },
 };
 

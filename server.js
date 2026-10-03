@@ -7,7 +7,7 @@ const hljs = require('highlight.js');
 const puppeteer = require('puppeteer');
 const { UserError } = require('./lib/errors');
 const { imagesToPdf } = require('./lib/images-to-pdf');
-const { mergePdfs } = require('./lib/pdf-tools');
+const { mergePdfs, splitPdf } = require('./lib/pdf-tools');
 
 const PORT = process.env.PORT || 3000;
 
@@ -25,10 +25,11 @@ function uploadFiles(field, { maxFiles, maxSizeMB }) {
     parse(req, res, (err) => {
       if (!err) return next();
       if (!(err instanceof multer.MulterError)) return next(err);
+      const tooMany = maxFiles === 1 ? 'Upload one file at a time.' : `Too many files (max ${maxFiles}).`;
       const messages = {
         LIMIT_FILE_SIZE: `File is too large (max ${maxSizeMB}MB).`,
-        LIMIT_FILE_COUNT: `Too many files (max ${maxFiles}).`,
-        LIMIT_UNEXPECTED_FILE: maxFiles === 1 ? 'Upload one file at a time.' : `Too many files (max ${maxFiles}).`,
+        LIMIT_FILE_COUNT: tooMany,
+        LIMIT_UNEXPECTED_FILE: tooMany,
       };
       res.status(400).json({ error: messages[err.code] || err.message });
     });
@@ -69,7 +70,7 @@ function sendPdf(res, bytes, baseName) {
 
 function requireFiles(req, what) {
   if (!req.files || req.files.length === 0) {
-    throw new UserError(`No ${what} provided. Send one or more "files" uploads.`);
+    throw new UserError(`No ${what} provided.`);
   }
   return req.files.map((f) => ({ buffer: f.buffer, name: f.originalname }));
 }
@@ -188,6 +189,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/vendor/pdfjs', express.static(path.join(path.dirname(require.resolve('pdfjs-dist/package.json')), 'build')));
 
+app.use('/shared', express.static(path.join(__dirname, 'lib', 'shared')));
+
 app.post('/api/convert', uploadFiles('file', { maxFiles: 1, maxSizeMB: 10 }), route(async (req, res) => {
   let markdownSource;
   let baseName = 'document';
@@ -223,6 +226,16 @@ app.post('/api/merge', uploadFiles('files', { maxFiles: 20, maxSizeMB: 50 }), ro
     throw new UserError('Add at least two PDFs to merge.');
   }
   sendPdf(res, await mergePdfs(files), 'merged');
+}));
+
+app.post('/api/split', uploadFiles('file', { maxFiles: 1, maxSizeMB: 100 }), route(async (req, res) => {
+  const [file] = requireFiles(req, 'PDF');
+  const result = await splitPdf(file, req.body, baseNameOf(file.name));
+  if (result.type === 'pdf') {
+    sendPdf(res, result.bytes, result.name);
+  } else {
+    sendDownload(res, result.bytes, { baseName: result.name, ext: 'zip', type: 'application/zip' });
+  }
 }));
 
 app.listen(PORT, () => {
