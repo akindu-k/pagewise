@@ -1,8 +1,10 @@
 FROM node:20-bookworm-slim
 
-# Chromium runtime libraries required by Puppeteer's bundled browser.
+# Chromium runtime libraries required by Puppeteer's bundled browser, plus
+# Ghostscript for Compress PDF.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
+    ghostscript \
     fonts-liberation \
     libasound2 \
     libatk-bridge2.0-0 \

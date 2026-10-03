@@ -2,6 +2,7 @@ import { initMarkdown } from './tools/markdown.js';
 import { initImages } from './tools/images.js';
 import { initMerge } from './tools/merge.js';
 import { initSplit } from './tools/split.js';
+import { initCompress } from './tools/compress.js';
 
 // Each tool owns a <main data-tool="..."> panel and a #hash route.
 const TOOLS = {
@@ -32,6 +33,13 @@ const TOOLS = {
     title: 'Split PDF',
     tagline: 'Split a PDF into ranges, every N pages, or pull out just the pages you need.',
     init: initSplit,
+  },
+  compress: {
+    hash: '#compress-pdf',
+    logo: ['PDF', 'Smaller PDF'],
+    title: 'Compress PDF',
+    tagline: 'Shrink PDF file size while keeping the quality you need.',
+    init: initCompress,
   },
 };
 
