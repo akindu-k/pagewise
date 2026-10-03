@@ -8,6 +8,7 @@ A small self-hosted PDF toolkit. Pick a tool from the menu at the top of the pag
 | JPG → PDF | `/#jpg-to-pdf` | Up to 30 images (JPG, PNG, WebP, GIF, TIFF, AVIF), drag to reorder, choose page size / orientation / margin. |
 | Merge PDF | `/#merge-pdf` | Up to 20 PDFs with page previews, drag to reorder, combined into one PDF. |
 | Split PDF | `/#split-pdf` | Split by custom ranges, every N pages, or extract chosen pages; previews which file each page goes to. |
+| Compress PDF | `/#compress-pdf` | Three levels (extreme / recommended / less) via Ghostscript; reports the size saved. |
 
 ## Stack
 
@@ -18,6 +19,7 @@ A small self-hosted PDF toolkit. Pick a tool from the menu at the top of the pag
 - **pdf-lib** — builds the image PDF (JPEGs are embedded as-is, no re-encoding)
 - **sharp** — reads image metadata, fixes EXIF rotation, converts WebP/GIF/TIFF/AVIF
 - **pdf.js** (`pdfjs-dist`) — page thumbnails in the browser
+- **Ghostscript** (`gs`, system package) — PDF compression
 - **multer** — file upload handling
 - Vanilla HTML/CSS/JS frontend (ES modules, one per tool in `public/js/tools/`)
 
@@ -36,6 +38,14 @@ Puppeteer's Chromium needs a few shared libraries. On Ubuntu/Debian:
 ```bash
 sudo apt-get install -y libnss3 libnspr4 libasound2t64
 ```
+
+### Ghostscript (Compress PDF)
+
+```bash
+sudo apt-get install -y ghostscript   # macOS: brew install ghostscript
+```
+
+The other tools work without it; Compress PDF returns an error if `gs` is missing.
 
 ## API
 
@@ -83,3 +93,16 @@ Responds with `merged.pdf`. Password-protected or invalid PDFs return a `400` na
 Returns a single PDF when the result is one file, otherwise a `.zip` of PDFs.
 The range parser lives in `lib/shared/page-ranges.mjs` and is also served to the
 browser at `/shared/`, so the preview and the server always agree.
+
+### `POST /api/compress` — compress a PDF
+
+`multipart/form-data` with one `file` (PDF, max 100 MB) and `level`:
+
+| `level` | Ghostscript preset | Images |
+| --- | --- | --- |
+| `extreme` | `/screen` | 72 dpi, JPEG |
+| `recommended` (default) | `/ebook` | 150 dpi, JPEG |
+| `low` | `/printer` | 300 dpi |
+
+Responds with the compressed PDF plus `X-Original-Size` / `X-Compressed-Size`
+headers. If compression wouldn't make the file smaller, the original is returned.

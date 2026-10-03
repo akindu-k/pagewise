@@ -8,6 +8,7 @@ const puppeteer = require('puppeteer');
 const { UserError } = require('./lib/errors');
 const { imagesToPdf } = require('./lib/images-to-pdf');
 const { mergePdfs, splitPdf } = require('./lib/pdf-tools');
+const { compressPdf } = require('./lib/compress');
 
 const PORT = process.env.PORT || 3000;
 
@@ -236,6 +237,15 @@ app.post('/api/split', uploadFiles('file', { maxFiles: 1, maxSizeMB: 100 }), rou
   } else {
     sendDownload(res, result.bytes, { baseName: result.name, ext: 'zip', type: 'application/zip' });
   }
+}));
+
+app.post('/api/compress', uploadFiles('file', { maxFiles: 1, maxSizeMB: 100 }), route(async (req, res) => {
+  const [file] = requireFiles(req, 'PDF');
+  const result = await compressPdf(file, req.body.level);
+  // Sizes let the UI report the saving without re-measuring the download.
+  res.setHeader('X-Original-Size', result.originalSize);
+  res.setHeader('X-Compressed-Size', result.compressedSize);
+  sendPdf(res, result.bytes, `${baseNameOf(file.name)}_compressed`);
 }));
 
 app.listen(PORT, () => {
