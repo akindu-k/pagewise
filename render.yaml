@@ -1,6 +1,8 @@
 # Render Blueprint — deploy with: Render Dashboard → New → Blueprint → this repo
 services:
   - type: web
+    # Kept as md-to-pdf: renaming the service would create a new one with a
+    # different onrender.com URL.
     name: md-to-pdf
     runtime: docker
     plan: free
