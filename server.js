@@ -370,7 +370,7 @@ ${urls}
   app.use((req, res) => {
     res.status(404).type('html').send(`<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="robots" content="noindex"><title>Page not found · Pagewise</title><link rel="stylesheet" href="/style.css"></head>
+<meta name="robots" content="noindex"><title>Page not found · Pagewise</title><link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/style.css"></head>
 <body><main class="workspace not-found"><h1>Page not found</h1><p>That page doesn't exist. <a href="/">Go to all PDF tools</a>.</p></main></body></html>`);
   });
 });

@@ -72,8 +72,8 @@ and a short how-to. Page copy and metadata live in `lib/shared/tools.mjs`.
 - Set **`GOOGLE_SITE_VERIFICATION`** to the code from Search Console's "HTML tag"
   verification method to add the `google-site-verification` meta tag
 - Old `/#merge-pdf` style links redirect to the new paths in the browser
-- The share image and Apple touch icon are generated with
-  `node scripts/make-images.js`
+- The favicon set (`favicon.ico`, `favicon.svg`, Apple touch icon, manifest
+  icons) and the share image are generated with `node scripts/make-images.js`
 
 ## API
 
