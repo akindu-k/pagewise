@@ -20,8 +20,7 @@ const fonts = `
 @font-face { font-family: PlexMono; src: ${font('@fontsource/ibm-plex-mono', 'ibm-plex-mono-latin-400-normal.woff2')}; }
 * { margin: 0; box-sizing: border-box; }
 body { background: #f4f2ee; color: #1d1c1a; font-family: Plex; }
-.mark { width: 64px; height: 78px; background: #c9411f; clip-path: polygon(0 0, 62% 0, 100% 30%, 100% 100%, 0 100%); position: relative; }
-.mark::after { content: ""; position: absolute; top: 0; right: 0; width: 38%; height: 30%; background: rgba(255,255,255,.45); clip-path: polygon(0 0, 100% 100%, 0 100%); }
+.mark { width: 76px; height: 76px; display: block; }
 `;
 
 const ogHtml = `<style>${fonts}
@@ -30,7 +29,7 @@ body { width: 1200px; height: 630px; padding: 92px 96px; border-left: 14px solid
 h1 { margin-top: 92px; font-size: 80px; line-height: 1.08; font-weight: 600; letter-spacing: -0.025em; }
 p { margin-top: 56px; font-family: PlexMono; font-size: 28px; color: #5f5b54; }
 </style>
-<div class="brand"><div class="mark"></div>Pagewise</div>
+<div class="brand"><img class="mark" src="data:image/svg+xml;base64,${Buffer.from(iconSvg()).toString('base64')}" alt="">Pagewise</div>
 <h1>Convert, combine and<br>shrink PDFs.</h1>
 <p>Merge · Split · Compress · JPG to PDF · PDF to Word</p>`;
 
