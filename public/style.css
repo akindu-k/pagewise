@@ -1042,3 +1042,53 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 .not-found a { color: var(--accent-ink); }
 .not-found p { margin-top: 0.5rem; color: var(--muted); }
+
+/* ---------- Footer credit ---------- */
+
+.site-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.site-footer a {
+  color: var(--ink);
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: var(--line-strong);
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.15s, color 0.15s;
+}
+.site-footer a:hover {
+  color: var(--accent-ink);
+  text-decoration-color: currentColor;
+}
+
+.site-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.site-footer-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  text-decoration: none;
+}
+.site-footer-links a:hover { text-decoration: underline; }
+.site-footer-links .icon {
+  width: 16px;
+  height: 16px;
+  color: var(--muted);
+}

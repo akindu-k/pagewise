@@ -285,9 +285,16 @@ function siteOrigin(req) {
   return `${req.protocol}://${req.host}`;
 }
 
+const AUTHOR = {
+  '@type': 'Person',
+  name: 'Akindu Kalhan',
+  url: 'https://akindu-k.github.io/me/',
+  sameAs: ['https://github.com/akindu-k'],
+};
+
 function structuredData(key, tool, origin, url, SITE_NAME) {
   if (key === 'home') {
-    return { '@context': 'https://schema.org', '@type': 'WebSite', name: SITE_NAME, url, description: tool.metaDescription };
+    return { '@context': 'https://schema.org', '@type': 'WebSite', name: SITE_NAME, url, description: tool.metaDescription, creator: AUTHOR };
   }
   return {
     '@context': 'https://schema.org',
@@ -301,6 +308,7 @@ function structuredData(key, tool, origin, url, SITE_NAME) {
     isAccessibleForFree: true,
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
     isPartOf: { '@type': 'WebSite', name: SITE_NAME, url: `${origin}/` },
+    creator: AUTHOR,
   };
 }
 
