@@ -1014,3 +1014,31 @@ button, input, select, textarea { font: inherit; color: inherit; }
 @media (max-width: 560px) {
   .directory { grid-template-columns: 1fr; }
 }
+
+/* ---------- How-to guide under each tool ---------- */
+
+.tool-guide:empty { display: none; }
+
+.tool-guide {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--line);
+  max-width: 62ch;
+}
+
+.tool-guide h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.tool-guide ol {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--muted);
+}
+
+.tool-guide li + li { margin-top: 0.4rem; }
+
+.not-found a { color: var(--accent-ink); }
+.not-found p { margin-top: 0.5rem; color: var(--muted); }

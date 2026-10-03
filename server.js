@@ -1,6 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const express = require('express');
+const compression = require('compression');
 const multer = require('multer');
 const MarkdownIt = require('markdown-it');
 const hljs = require('highlight.js');
@@ -186,8 +187,16 @@ async function htmlToPdfBuffer(html) {
 }
 
 const app = express();
+// Behind a reverse proxy (Caddy/Render), trust X-Forwarded-* for the
+// request's protocol and host.
+app.set('trust proxy', true);
+// gzip HTML/CSS/JS/JSON. PDFs, zips and images are already compressed.
+app.use(compression());
 app.use(express.json({ limit: '10mb' }));
-app.use(express.static(path.join(__dirname, 'public')));
+// The page template is only served rendered.
+app.get('/index.html', (req, res) => res.redirect(301, '/'));
+// index: false so "/" goes to the page renderer below, not the raw template.
+app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 
 app.use('/vendor/pdfjs', express.static(path.join(path.dirname(require.resolve('pdfjs-dist/package.json')), 'build')));
 // Self-hosted IBM Plex fonts (no third-party font requests).
@@ -261,6 +270,110 @@ app.post('/api/pdf-to-word', uploadFiles('file', { maxFiles: 1, maxSizeMB: 50 })
     type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   });
 }));
+
+// ---------- Pages (server-rendered for search engines) ----------
+
+const pageTemplate = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
+const catalogue = import('./lib/shared/tools.mjs');
+const BUILD_DATE = new Date().toISOString().slice(0, 10);
+
+// Public base URL for canonical links and the sitemap. Set SITE_URL in
+// production (e.g. https://pagewise.example.com); otherwise it's taken
+// from the request.
+function siteOrigin(req) {
+  if (process.env.SITE_URL) return process.env.SITE_URL.replace(/\/+$/, '');
+  return `${req.protocol}://${req.host}`;
+}
+
+function structuredData(key, tool, origin, url, SITE_NAME) {
+  if (key === 'home') {
+    return { '@context': 'https://schema.org', '@type': 'WebSite', name: SITE_NAME, url, description: tool.metaDescription };
+  }
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: `${tool.title} · ${SITE_NAME}`,
+    url,
+    description: tool.metaDescription,
+    applicationCategory: 'UtilitiesApplication',
+    operatingSystem: 'Any',
+    browserRequirements: 'Requires JavaScript',
+    isAccessibleForFree: true,
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    isPartOf: { '@type': 'WebSite', name: SITE_NAME, url: `${origin}/` },
+  };
+}
+
+async function renderPage(req, key) {
+  const { TOOLS, SITE_NAME, escapeHtml, renderGuide, renderDirectory } = await catalogue;
+  const tool = TOOLS[key];
+  const origin = siteOrigin(req);
+  const canonical = `${origin}${tool.path}`;
+  // "<" is escaped so the JSON can't close the <script> tag early.
+  const jsonLd = JSON.stringify(structuredData(key, tool, origin, canonical, SITE_NAME)).replace(/</g, '\\u003c');
+
+  const values = {
+    pageTitle: escapeHtml(tool.pageTitle),
+    metaDescription: escapeHtml(tool.metaDescription),
+    canonical: escapeHtml(canonical),
+    origin: escapeHtml(origin),
+    jsonLd,
+    title: escapeHtml(tool.title),
+    description: escapeHtml(tool.description),
+    directory: renderDirectory(),
+    guide: renderGuide(tool),
+    // Google Search Console "HTML tag" verification, if configured.
+    verification: process.env.GOOGLE_SITE_VERIFICATION
+      ? `\n<meta name="google-site-verification" content="${escapeHtml(process.env.GOOGLE_SITE_VERIFICATION)}">`
+      : '',
+  };
+
+  return pageTemplate
+    .replace(/{{(\w+)}}/g, (_, name) => values[name] ?? '')
+    // Show this page's panel and mark its nav link as current.
+    .replace(`data-tool-panel="${key}" aria-labelledby="tool-title" hidden`, `data-tool-panel="${key}" aria-labelledby="tool-title"`)
+    .replace(key === 'home' ? 'class="brand" href="/"' : `href="${tool.path}" data-tool="${key}"`,
+      (match) => `${match} aria-current="page"`);
+}
+
+catalogue.then(({ TOOLS }) => {
+  for (const [key, tool] of Object.entries(TOOLS)) {
+    app.get(tool.path, async (req, res, next) => {
+      try {
+        res.setHeader('Cache-Control', 'no-cache');
+        res.type('html').send(await renderPage(req, key));
+      } catch (err) {
+        next(err);
+      }
+    });
+  }
+
+  app.get('/robots.txt', (req, res) => {
+    res.type('text/plain').send(`User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: ${siteOrigin(req)}/sitemap.xml\n`);
+  });
+
+  app.get('/sitemap.xml', (req, res) => {
+    const origin = siteOrigin(req);
+    const urls = Object.values(TOOLS).map((tool) => `  <url>
+    <loc>${origin}${tool.path}</loc>
+    <lastmod>${BUILD_DATE}</lastmod>
+  </url>`).join('\n');
+    res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls}
+</urlset>
+`);
+  });
+
+  // Real 404s (not the home page with a 200), so search engines don't index
+  // mistyped URLs.
+  app.use((req, res) => {
+    res.status(404).type('html').send(`<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex"><title>Page not found · Pagewise</title><link rel="stylesheet" href="/style.css"></head>
+<body><main class="workspace not-found"><h1>Page not found</h1><p>That page doesn't exist. <a href="/">Go to all PDF tools</a>.</p></main></body></html>`);
+  });
+});
 
 app.listen(PORT, () => {
   console.log(`md-to-pdf server running at http://localhost:${PORT}`);

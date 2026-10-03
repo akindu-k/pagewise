@@ -1,3 +1,4 @@
+import { TOOLS as CATALOGUE, SITE_NAME, renderGuide } from '/shared/tools.mjs';
 import { initMarkdown } from './tools/markdown.js';
 import { initImages } from './tools/images.js';
 import { initMerge } from './tools/merge.js';
@@ -6,103 +7,38 @@ import { initCompress } from './tools/compress.js';
 import { initWord } from './tools/word.js';
 import { initHome } from './tools/home.js';
 
-// Each view owns a <section data-tool-panel="..."> and a #hash route.
-// group/icon/summary/accepts feed the home page directory.
-const TOOLS = {
-  home: {
-    hash: '#home',
-    title: 'Convert, combine and shrink PDFs',
-    pageTitle: 'Pagewise: free PDF tools',
-    description: 'Six tools, no sign-up and no watermarks. Files are processed on this server and deleted as soon as your download is ready.',
-  },
-  md: {
-    hash: '#md-to-pdf',
-    title: 'Markdown to PDF',
-    description: 'Upload a .md file or paste Markdown. You get a clean PDF with headings, tables and highlighted code.',
-    group: 'Create PDF',
-    icon: 'md',
-    summary: 'Markdown files or pasted text, styled like GitHub.',
-    accepts: 'Markdown · up to 10 MB',
-    init: initMarkdown,
-  },
-  jpg: {
-    hash: '#jpg-to-pdf',
-    title: 'JPG to PDF',
-    description: 'Combine photos and images into one PDF, in the order you choose.',
-    group: 'Create PDF',
-    icon: 'image',
-    summary: 'Photos and images in the order you choose.',
-    accepts: 'JPG, PNG, WebP, GIF, TIFF · up to 30 images',
-    init: initImages,
-  },
-  merge: {
-    hash: '#merge-pdf',
-    title: 'Merge PDF',
-    description: 'Combine several PDFs into one file. Arrange them in the order you want first.',
-    group: 'Organize',
-    icon: 'merge',
-    summary: 'Several PDFs combined into one file.',
-    accepts: 'PDF · up to 20 files',
-    init: initMerge,
-  },
-  split: {
-    hash: '#split-pdf',
-    title: 'Split PDF',
-    description: 'Break a PDF into ranges, split it every few pages, or pull out only the pages you need.',
-    group: 'Organize',
-    icon: 'split',
-    summary: 'Ranges, every N pages, or just the pages you pick.',
-    accepts: 'PDF · up to 100 MB',
-    init: initSplit,
-  },
-  compress: {
-    hash: '#compress-pdf',
-    title: 'Compress PDF',
-    description: 'Make a PDF smaller for email and uploads. Choose how much image quality to keep.',
-    group: 'Optimize',
-    icon: 'compress',
-    summary: 'Smaller files for email and uploads.',
-    accepts: 'PDF · up to 100 MB',
-    init: initCompress,
-  },
-  word: {
-    hash: '#pdf-to-word',
-    title: 'PDF to Word',
-    description: 'Turn a PDF into a .docx you can edit in Word, Google Docs or LibreOffice.',
-    group: 'Convert from PDF',
-    icon: 'word',
-    summary: 'An editable .docx from a text-based PDF.',
-    accepts: 'PDF · up to 50 MB',
-    init: initWord,
-  },
+// Each view owns a <section data-tool-panel="..."> and a URL path. The
+// server renders the first page; after that, switching tools happens here
+// with the History API.
+const INITS = {
+  md: initMarkdown,
+  jpg: initImages,
+  merge: initMerge,
+  split: initSplit,
+  compress: initCompress,
+  word: initWord,
 };
 
 const links = document.querySelectorAll('.tool-link');
+const brand = document.querySelector('.brand');
 const panels = document.querySelectorAll('[data-tool-panel]');
 const titleEl = document.getElementById('tool-title');
 const descriptionEl = document.getElementById('tool-description');
+const guideEl = document.querySelector('.tool-guide');
+const metaDescription = document.querySelector('meta[name="description"]');
 
-const brand = document.querySelector('.brand');
-
-Object.entries(TOOLS).forEach(([key, tool]) => {
-  if (tool.init) tool.api = tool.init(document.querySelector(`[data-tool-panel="${key}"]`));
+const apis = {};
+Object.entries(INITS).forEach(([key, init]) => {
+  apis[key] = init(document.querySelector(`[data-tool-panel="${key}"]`));
 });
 
-// Opens a tool with files picked on the home page.
-function openTool(key, files) {
-  location.hash = TOOLS[key].hash;
-  TOOLS[key].api.receive(files);
-}
-
-initHome(document.querySelector('[data-tool-panel="home"]'), TOOLS, openTool);
-
-function toolFromHash() {
-  const match = Object.entries(TOOLS).find(([, tool]) => tool.hash === location.hash);
+function keyForPath(pathname) {
+  const match = Object.entries(CATALOGUE).find(([, tool]) => tool.path === pathname);
   return match ? match[0] : 'home';
 }
 
 function show(key, { focus = false } = {}) {
-  const tool = TOOLS[key];
+  const tool = CATALOGUE[key];
   links.forEach((link) => {
     if (link.dataset.tool === key) {
       link.setAttribute('aria-current', 'page');
@@ -114,13 +50,51 @@ function show(key, { focus = false } = {}) {
   });
   if (key === 'home') brand.setAttribute('aria-current', 'page');
   else brand.removeAttribute('aria-current');
+
   panels.forEach((panel) => { panel.hidden = panel.dataset.toolPanel !== key; });
   titleEl.textContent = tool.title;
   descriptionEl.textContent = tool.description;
-  document.title = tool.pageTitle || `${tool.title} · Pagewise`;
+  guideEl.innerHTML = renderGuide(tool);
+  document.title = tool.pageTitle || `${tool.title} · ${SITE_NAME}`;
+  metaDescription.setAttribute('content', tool.metaDescription);
   // Move focus to the new heading so screen readers announce the switch.
   if (focus) titleEl.focus();
 }
 
-window.addEventListener('hashchange', () => show(toolFromHash(), { focus: true }));
-show(toolFromHash());
+function navigate(key) {
+  const { path } = CATALOGUE[key];
+  if (location.pathname !== path) history.pushState({}, '', path);
+  show(key, { focus: true });
+  window.scrollTo(0, 0);
+}
+
+// Opens a tool with files picked on the home page.
+function openTool(key, files) {
+  navigate(key);
+  apis[key].receive(files);
+}
+
+initHome(document.querySelector('[data-tool-panel="home"]'), CATALOGUE, openTool);
+
+// Handle in-app links without a full page load (plain left clicks only, so
+// open-in-new-tab etc. still work).
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('a[href^="/"]');
+  if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  const url = new URL(a.href);
+  const match = Object.entries(CATALOGUE).find(([, tool]) => tool.path === url.pathname);
+  if (!match) return;
+  e.preventDefault();
+  navigate(match[0]);
+});
+
+window.addEventListener('popstate', () => show(keyForPath(location.pathname), { focus: true }));
+
+// Old links used #hashes (e.g. /#merge-pdf); move them to the real path.
+const legacy = Object.entries(CATALOGUE).find(([, tool]) => tool.legacyHash && tool.legacyHash === location.hash);
+if (legacy) {
+  history.replaceState({}, '', legacy[1].path);
+  show(legacy[0]);
+} else {
+  show(keyForPath(location.pathname));
+}

@@ -59,6 +59,22 @@ npm run setup:python                   # creates .venv and installs requirements
 
 The server uses `$PDF2DOCX_PYTHON` if set, else `.venv/bin/python`, else `python3`.
 
+## SEO
+
+Each tool has its own URL (`/merge-pdf`, `/split-pdf`, …), rendered on the server
+with its own title, meta description, canonical link, Open Graph tags, JSON-LD
+and a short how-to. Page copy and metadata live in `lib/shared/tools.mjs`.
+
+- `GET /sitemap.xml` and `GET /robots.txt` are generated from the same list
+- Set **`SITE_URL`** in production (e.g. `SITE_URL=https://pagewise.example.com`)
+  so canonical links, the sitemap and share images use the public address.
+  Without it, the request's host is used
+- Set **`GOOGLE_SITE_VERIFICATION`** to the code from Search Console's "HTML tag"
+  verification method to add the `google-site-verification` meta tag
+- Old `/#merge-pdf` style links redirect to the new paths in the browser
+- The share image and Apple touch icon are generated with
+  `node scripts/make-images.js`
+
 ## API
 
 ### `POST /api/convert` — Markdown to PDF
