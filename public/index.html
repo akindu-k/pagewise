@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PDF Converter &mdash; Markdown &amp; JPG to PDF</title>
+<title>PDF Converter</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,16 +12,17 @@
       <div class="logo">
         <span class="logo-mark" id="logo-source">MD</span>
         <span class="logo-arrow">&rarr;</span>
-        <span class="logo-mark pdf">PDF</span>
+        <span class="logo-mark pdf" id="logo-target">PDF</span>
       </div>
-      <p class="tagline" id="tagline">Convert Markdown files to polished PDF documents, right in your browser.</p>
-      <nav class="modes" aria-label="Converter">
-        <a class="mode active" href="#md-to-pdf" data-mode="md">Markdown to PDF</a>
-        <a class="mode" href="#jpg-to-pdf" data-mode="jpg">JPG to PDF</a>
+      <p class="tagline" id="tagline"></p>
+      <nav class="tools" aria-label="Tools">
+        <a class="tool-link" href="#md-to-pdf" data-tool="md">Markdown to PDF</a>
+        <a class="tool-link" href="#jpg-to-pdf" data-tool="jpg">JPG to PDF</a>
+        <a class="tool-link" href="#merge-pdf" data-tool="merge">Merge PDF</a>
       </nav>
     </header>
 
-    <main class="card" id="md-converter">
+    <main class="card" data-tool-panel="md">
       <div class="tabs">
         <button class="tab active" data-tab="upload" type="button">Upload File</button>
         <button class="tab" data-tab="paste" type="button">Paste Markdown</button>
@@ -55,8 +56,8 @@
       </div>
     </main>
 
-    <main class="card" id="jpg-converter" hidden>
-      <label id="img-dropzone" class="dropzone" for="img-input">
+    <main class="card" data-tool-panel="jpg" hidden>
+      <label class="dropzone" for="img-input">
         <input type="file" id="img-input" accept="image/jpeg,image/png,image/webp,image/gif,image/tiff,image/avif" multiple hidden>
         <div class="dropzone-content">
           <svg class="dropzone-icon" viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -69,14 +70,14 @@
         </div>
       </label>
 
-      <div id="img-list-wrap" hidden>
-        <div class="img-list-header">
-          <span id="img-count"></span>
+      <div class="file-list-wrap" hidden>
+        <div class="file-list-header">
+          <span class="file-count"></span>
           <span class="hint">Drag to reorder</span>
           <label class="link-btn" for="img-input">+ Add more</label>
-          <button id="img-clear" type="button" class="link-btn">Clear all</button>
+          <button type="button" class="link-btn file-clear">Clear all</button>
         </div>
-        <ol id="img-list" class="img-list"></ol>
+        <ol class="file-list"></ol>
       </div>
 
       <div class="options">
@@ -103,16 +104,46 @@
       </div>
 
       <div class="actions">
-        <button id="img-convert-btn" class="convert-btn" type="button" disabled>Convert to PDF</button>
-        <span id="img-status" class="status" aria-live="polite"></span>
+        <button class="convert-btn" type="button" disabled>Convert to PDF</button>
+        <span class="status" aria-live="polite"></span>
+      </div>
+    </main>
+
+    <main class="card" data-tool-panel="merge" hidden>
+      <label class="dropzone" for="merge-input">
+        <input type="file" id="merge-input" accept="application/pdf,.pdf" multiple hidden>
+        <div class="dropzone-content">
+          <svg class="dropzone-icon" viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M12 16V4m0 0-4 4m4-4 4 4" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <p><strong>Drop your PDFs here</strong> or click to browse</p>
+          <p class="hint">Up to 20 PDFs, 50MB each</p>
+        </div>
+      </label>
+
+      <div class="file-list-wrap" hidden>
+        <div class="file-list-header">
+          <span class="file-count"></span>
+          <span class="hint">Drag to reorder</span>
+          <label class="link-btn" for="merge-input">+ Add more</label>
+          <button type="button" class="link-btn file-clear">Clear all</button>
+        </div>
+        <ol class="file-list"></ol>
+      </div>
+
+      <div class="actions">
+        <button class="convert-btn" type="button" disabled>Merge PDF</button>
+        <span class="status" aria-live="polite"></span>
+        <span class="hint merge-summary"></span>
       </div>
     </main>
 
     <footer class="footer">
-      <p>Markdown is rendered with GitHub-flavored styling via headless Chromium. Images are embedded at full quality.</p>
+      <p>Files are processed on this server and are not stored.</p>
     </footer>
   </div>
 
-  <script src="app.js"></script>
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>
