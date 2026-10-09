@@ -288,7 +288,7 @@ function siteOrigin(req) {
 const AUTHOR = {
   '@type': 'Person',
   name: 'Akindu Kalhan',
-  url: 'https://akindu-k.github.io/me/',
+  url: 'https://akindukalhan.is-a.dev/',
   sameAs: ['https://github.com/akindu-k'],
 };
 
